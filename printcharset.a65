@@ -1,0 +1,89 @@
+;=====================================================================
+; Print character set to screen
+;---------------------------------------------------------------------
+; Requires 8k+ memory
+;---------------------------------------------------------------------
+; Copyright (C) 2021 Lawrence Woodman <lwoodman@vlifesystems.com>
+; Licensed under an MIT licence.  Please see LICENCE.md for details.
+;=====================================================================
+
+
+            .byt  $00, $20    ; Load address ($2000 / 8192)
+
+            * = $2000
+            jmp  main
+#include "80col.a65"
+
+main        jsr  SP_init
+            lda  #65
+            ldx  #00
+            ldy  #00
+            jsr  putchxy
+            lda  #66
+            ldx  #01
+            ldy  #00
+            jsr  putchxy
+            lda  #67
+            ldx  #02
+            ldy  #02
+            jsr  putchxy
+            lda  #68
+            ldx  #03
+            ldy  #03
+            jsr  putchxy
+            lda  #69
+            ldx  #04
+            ldy  #04
+            jsr  putchxy
+            lda  #70
+            ldx  #05
+            ldy  #05
+            jsr  putchxy
+
+
+            lda  #10
+            sta  CRX
+            lda  #06
+            sta  CRY
+            jsr  printChSet
+
+
+            lda  #71
+            ldx  #06
+            ldy  #09
+            jsr  putchxy
+            lda  #72
+            ldx  #07
+            ldy  #10
+            jsr  putchxy
+            lda  #73
+            ldx  #08
+            ldy  #11
+            jsr  putchxy
+            lda  #74
+            ldx  #78
+            ldy  #11
+            jsr  putchxy
+            lda  #75
+            ldx  #79
+            ldy  #11
+            jsr  putchxy
+
+
+forever     jmp  forever
+            rts
+
+
+            ; Print character set
+printChSet  .(
+            lda  #32
+loop        pha
+            jsr  putch
+            pla
+            tax
+            inx
+            txa
+            cmp  #96
+            bne  loop
+            rts
+.)

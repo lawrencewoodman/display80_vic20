@@ -1,0 +1,416 @@
+;=====================================================================
+; Print text using a 2x8 font
+;---------------------------------------------------------------------
+; Requires 8k+ memory
+;---------------------------------------------------------------------
+; Copyright (C) 2021 Lawrence Woodman <lwoodman@vlifesystems.com>
+; Licensed under an MIT licence.  Please see LICENCE.md for details.
+;=====================================================================
+
+; Configuration
+SNUMCOL     = 80              ; Side number of text columns
+                              ; Must be divisible by 4
+SNUMROW     = 12              ; Side number of text rows
+RVTVORIGIN  = 20              ; Vertical TV picture origin
+NL          = $0A             ; Newline character
+
+; Calculated dimensions
+RNUMCOL     = SNUMCOL/4       ; Real number of text columns
+RNUMROW     = SNUMROW         ; Real number of text rows
+SLSTCOL     = SNUMCOL-1       ; Last simulated column
+
+
+; VIC Registers
+VICCR1      = $9001           ; Vertical TV picture origin
+VICCR2      = $9002           ; Number of columns, part of screen address
+VICCR3      = $9003           ; Number of rows, raster location, char size
+VICCR5      = $9005           ; Screen map and character map address
+
+; Display memory location constants
+CHRMAPBASE  = $1000           ; Base address of character map
+SCRBASE     = $1E00           ; Base address of screen
+COLMAPBASE  = $9400           ; Base address of colour map
+
+
+; Zero Page Variable Locations
+CHRADDR     = $01             ; 16-bit character map address
+                              ; used for calculations
+CHQUARTER   = $03             ; Quarter of character definition right to left
+CHDEFADDR   = $09             ; 16-bit character def address
+CRX         = $0B             ; Cursor x position on simulated screen
+CRY         = $0C             ; Cursor y position on simulated screen
+STRADDR     = $0D             ; 16-bit address of a string to print
+SFROM       = $0F             ; 16-bit scroll from address
+STO         = $12             ; 16-bit scroll to address
+CHDEF       = $14             ; 8 bytes defining a character
+
+            ;--------------------------------
+            ; SP_init
+            ; Init sideways printing screen
+            ;--------------------------------
+SP_init     lda  #00          ; Init cursor to top left of screen
+            sta  CRX          ; |
+            sta  CRY          ; /
+            jsr  cfgScr       ; Configure screen
+            jsr  initClr      ; Init the colour map
+            jsr  initScr      ; Init the screen
+            jsr  clrChMap     ; Clear character map
+
+
+            ;-----------------------------------------------
+            ; cfgScr
+            ; Configure screen dimensions, position and
+            ; memory locations
+            ;-----------------------------------------------
+cfgScr      lda  #RVTVORIGIN
+            sta  VICCR1       ; Set vertical TV origin
+            lda  #(128|RNUMCOL)
+            sta  VICCR2       ; Set number of columns displayed
+                              ; and screen address
+            ;lda  #((RNUMROW*2)+1)
+            lda  #(RNUMROW*2)
+            sta  VICCR3       ; Set number of rows displayed
+                              ; and character size
+                              ; TODO check comment above about char size
+            lda  #(240|12)    ; Set screen and character map addresses
+                              ; to $1E00 and $1000
+            sta  VICCR5
+            rts
+
+
+            ;-----------------------------------------------
+            ; initClr
+            ; Init the colour map to all a single colour
+            ;-----------------------------------------------
+initClr     .(
+            ldy  #00
+loop        lda  #00
+            sta  COLMAPBASE, y
+            iny
+            bne  loop
+            rts
+.)
+
+            ;-----------------------------------------------
+            ; initScr
+            ; Fill screen map with characters needed
+            ;-----------------------------------------------
+            ; TODO improve this loop code
+initScr     .(
+            ldy  #(RNUMCOL*RNUMROW)
+loop        tya
+            sta  SCRBASE, y     ; Store character in screen map
+            dey
+            cpy  #$FF
+            bne  loop
+            rts
+.)
+
+
+            ;-----------------------------------------------
+            ; clrChMap
+            ; Clear the screen by zeroing the character map
+            ;-----------------------------------------------
+clrChMap    .(
+            lda  #$00
+            sta  CHRADDR
+            lda  #>CHRMAPBASE
+            sta  CHRADDR+1
+            ldy  #00
+loop        lda  #00
+            sta  (CHRADDR),y      ; Set character map location
+            inc  CHRADDR          ; Increment CHRADDR
+            bne  doneInc          ; |
+            inc  CHRADDR+1        ; /
+doneInc     lda  CHRADDR+1
+            cmp  #>SCRBASE
+            bne  loop
+            rts
+.)
+
+
+            ;-----------------------------------------
+            ; scrollup
+            ; Scroll the text up one line
+            ;-----------------------------------------
+scrollup    .(
+            lda  #<(CHRMAPBASE+8*RNUMCOL)    ; Set copy start locations
+            sta  SFROM                       ; |
+            lda  #>(CHRMAPBASE+8*RNUMCOL)    ; |
+            sta  SFROM+1                     ; |
+            lda  #<CHRMAPBASE                ; |
+            sta  STO                         ; |
+            lda  #>CHRMAPBASE                ; |
+            sta  STO+1                       ; /
+
+            ldy  #0
+            ldx  #>(8*RNUMCOL*(RNUMROW-1))   ; msb size of move
+            beq  partPage
+pageLoop    lda  (SFROM),y                   ; Copy a page
+            sta  (STO),y                     ; |
+            iny                              ; |
+            bne  pageLoop                    ; /
+            inc  SFROM+1                     ; Next page
+            inc  STO+1                       ; /
+            dex
+            bne  pageLoop
+partPage    ldx  #<(8*RNUMCOL*(RNUMROW-1))
+            beq  wipe
+partLoop    lda  (SFROM),y                   ; Copy remainder
+            sta  (STO),y                     ; |
+            iny                              ; |
+            dex                              ; |
+            bne  partLoop                    ; /
+
+            ; Wipe last line
+wipe        lda   #<(CHRMAPBASE+(8*RNUMCOL*(RNUMROW-1)))
+            sta   STO
+            lda   #>(CHRMAPBASE+(8*RNUMCOL*(RNUMROW-1)))
+            sta   STO+1
+            ldy   #$FF
+            lda   #00
+wipeLoop    sta   (STO),y
+            dey
+            bne   wipeLoop
+            rts
+.)
+
+            ;-----------------------------------------
+            ; putch
+            ; Print a character to screen at cursor
+            ; and move cursor
+            ;-----------------------------------------
+            ; ACC - character to print
+            ;-----------------------------------------
+putch       .(
+            cmp  #NL
+            beq  newline      ; If newline character
+
+            ; Print the character
+            pha
+            lda  CRX
+            tax
+            lda  CRY
+            tay
+            pla
+            jsr  putchxy
+
+            ; Move cursor
+            lda  CRX
+            cmp  #SLSTCOL
+            bne  nextCol
+
+            ; Move cursor to next line
+newline     lda  #0
+            sta  CRX
+            lda  CRY
+            cmp  #(RNUMROW-1)
+            beq  scroll       ; Scroll up if on last line
+            inc  CRY
+            bne  done         ; Equivalant to JMP
+
+scroll      jsr  scrollup
+            jmp  done
+
+nextCol     inc  CRX
+done        rts
+.)
+
+            ;-----------------------------------------
+            ; putchxy
+            ; Print a character to screen at position
+            ; specified
+            ; This will print NL and ASCII 32-95
+            ;-----------------------------------------
+            ; ACC - character to print
+            ;   X - Column on simulated screen
+            ;   Y - Row on simulated screen
+            ;-----------------------------------------
+putchxy     .(
+            cmp  #95
+            bcc  storeCh      ; If <= 95
+            and  #$5F         ; Drop bit 5 (upcase)
+storeCh     pha               ; Push character to stack
+            lda  #$00         ; Zero CHRADDR
+            sta  CHRADDR      ; |
+            lda  #$00         ; |
+            sta  CHRADDR+1    ; /
+
+            ; Find which quarter of a character definition
+            ; NOTE This counts the quarters from right to left
+            ; TODO tidy this up
+            txa
+            and  #3           ; Look at right 2 bits
+            sta  CHQUARTER    ;
+            lda  #3
+            sec
+            sbc  CHQUARTER
+            sta  CHQUARTER
+            txa
+
+            ; Find location of simulated column pair
+findCol     lsr               ; Quarter the column
+            lsr               ; /
+            sta  CHRADDR      ; lsb
+
+            ; Find location of row
+findRow     cpy  #00
+            beq  mul8
+            ; Add number of real columns to address
+            clc
+            lda  CHRADDR      ; lsb
+            adc  #RNUMCOL
+            sta  CHRADDR      ; lsb
+            bcc  addDone1
+            inc  CHRADDR+1    ; msb
+addDone1    dey
+            jmp  findRow
+
+
+mul8        ; TODO find better name
+
+            ; Multiply by 8 to find location of character
+            ; Shift left 3 times to multiply by 8
+            asl  CHRADDR       ; lsb
+            rol  CHRADDR+1     ; msb
+            asl  CHRADDR       ; lsb
+            rol  CHRADDR+1     ; msb
+            asl  CHRADDR       ; lsb
+            rol  CHRADDR+1     ; msb
+
+            ; Add $1000 as address of character map
+            clc
+            lda  CHRADDR+1    ; msb
+            adc  #>CHRMAPBASE
+            sta  CHRADDR+1    ; msb
+
+            ; Copy the character to the screen
+copyCh      lda  #00
+            sta  CHDEFADDR+1
+            pla               ; Pull character off stack
+            sec
+            sbc  #32          ; Font definitions are from space onwards
+            sta  CHDEFADDR    ; Multiply character by 2
+            asl  CHDEFADDR    ; |
+            rol  CHDEFADDR+1  ; /
+
+            clc
+            lda  CHDEFADDR
+            adc  #<fontDef     ; lsb
+            sta  CHDEFADDR
+            lda  CHDEFADDR+1
+            adc  #>fontDef     ; msb
+            sta  CHDEFADDR+1
+
+
+            lda  #1           ; Init bitmasks in self-modifying code
+            sta  andL+1       ; |
+            sta  andR+1       ; |
+            sta  realignL-1   ; /
+            sta  realignR-1   ; /
+
+            ; Put character definition into 8 bytes using bits 1 and 2
+            ldx  #0
+getLoop     ldy  #0
+            lda  (CHDEFADDR),y
+andL        and  #1
+            ldy  #1           ; Align the left bit
+realignL    dey               ; |
+            beq  alignDoneL   ; |
+            lsr               ; |
+            jmp  realignL     ; /
+alignDoneL
+            asl
+            sta  CHDEF, x
+            ldy  #01
+            lda  (CHDEFADDR), y
+andR        and  #1
+            ldy  #1           ; Align the right bit
+realignR    dey               ; |
+            beq  alignDoneR   ; |
+            lsr               ; |
+            jmp  realignR     ; /
+alignDoneR
+            ora  CHDEF, x
+
+            ; Put character in correct quarter
+            ldy  CHQUARTER
+realignQ    beq  alignDoneQ
+            asl
+            asl
+            dey
+            jmp  realignQ
+alignDoneQ
+
+            sta  CHDEF, x
+            asl  andL+1       ; Self-modify code to move to next bits
+            asl  andR+1       ; |
+            inc  realignL-1   ; /
+            inc  realignR-1   ; /
+            inx
+            cpx  #8
+            bne  getLoop
+
+
+            ; Copy the character to the character definition.
+            ; This gets the existing definition, clears the bits
+            ; where this character will go and ORs the remaining
+            ; bits with the new character.
+            ldx  #7
+            ldy  #7
+copyLoop    lda  CHQUARTER
+            cmp  #00
+            beq  q0
+            cmp  #01
+            beq  q1
+            cmp  #02
+            beq  q2
+q3          lda  (CHRADDR),y
+            and  #$3F
+            ora  CHDEF, x
+            jmp  setCh
+q2          lda  (CHRADDR),y
+            and  #$CF
+            ora  CHDEF, x
+            jmp  setCh
+q1          lda  (CHRADDR),y
+            and  #$F3
+            ora  CHDEF, x
+            jmp  setCh
+q0          lda  (CHRADDR),y
+            and  #$FC
+            ora  CHDEF, x
+setCh       sta  (CHRADDR),y
+            dex
+            dey
+            cpy  #$FF
+            bne  copyLoop
+
+            rts
+.)
+
+
+            ;----------------------------------------
+            ; puts
+            ; Print string
+            ;----------------------------------------
+            ; STRADDR - Location of zero terminated
+            ;           string.  This location is
+            ;           left at end of string after
+            ;           function returns.
+            ;----------------------------------------
+puts        .(
+loop        ldy  #00
+            lda  (STRADDR), y
+            beq  done
+            jsr  putch
+            inc  STRADDR      ; Increment STRADDR
+            bne  incDone      ; |
+            inc  STRADDR+1    ; /
+incDone
+            jmp  loop
+done        rts
+.)
+
+
+#include "fontdef.a65"        ; The font definitions

@@ -1,0 +1,80 @@
+;=====================================================================
+; Scroll messages up the screen
+;---------------------------------------------------------------------
+; Requires 8k+ memory
+;---------------------------------------------------------------------
+; Copyright (C) 2021 Lawrence Woodman <lwoodman@vlifesystems.com>
+; Licensed under an MIT licence.  Please see LICENCE.md for details.
+;=====================================================================
+
+FDX         = $CB             ; Matrix key coordinate of key press
+
+            .byt  $00, $20    ; Load address ($2000 / 8192)
+
+            * = $2000
+            jmp  main
+#include "80col.a65"
+
+main        .(
+            jsr  SP_init
+
+forever     lda  #<msg
+            sta  STRADDR
+            lda  #>msg
+            sta  STRADDR+1
+            jsr  scrollText
+            jmp  forever
+.)
+
+delay       .(
+getKey      lda  FDX
+            cmp  #64          ; No key pressed
+            bne  getKey       ; Wait if key pressed
+
+            ; Wait for a little bit
+            ldx  #$10
+loop1       ldy  #$FF
+loop2       dey
+            bne  loop2
+            dex
+            bne  loop1
+            rts
+.)
+
+
+scrollText  .(
+loop        ldy  #00
+            lda  (STRADDR), y
+            beq  done
+            jsr  putch
+            lda  CRX
+            bne  notFirstCol  ; If in first column
+            jsr  delay
+notFirstCol inc  STRADDR      ; Increment STRADDR
+            bne  incDone      ; |
+            inc  STRADDR+1    ; /
+incDone
+            jmp  loop
+done        rts
+.)
+
+msg         .aasc "80 columns on the Commodore VIC-20!",NL
+            .aasc NL
+            .aasc "Supports Newline (software definable) and ASCII 32-95.  "
+            .aasc "The fonts are 2*8.  "
+            .aasc "The fonts use a mixture of uppercase and lowercase to "
+            .aasc "help differentiate the characters and also uses descenders "
+            .aasc "for the same reason.",NL
+            .aasc NL
+            .aasc "The standard text mode is 80*12", NL
+            .aasc NL
+            .aasc "The alphabet:                  The numbers:",NL
+            .aasc "  abcdefghijklmnopqrstuvwxyz   "
+            .aasc "  0123456789",NL
+            .aasc "The rest:",NL
+            .aasc "  !",34,"#$%&'()*+,-./:;<=>?@[\]^_",NL
+            .aasc  NL
+            .aasc "Where there's a will there's a way!",NL
+            .aasc  NL,0
+
+; TODO Decide if want to show 'The rest' above
