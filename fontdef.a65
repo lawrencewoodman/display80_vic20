@@ -16,7 +16,7 @@ fontDef
           .byt  %01011111
 
 ; Double quote
-          .byt  %00000000
+          .byt  %00000011
           .byt  %00000011
 
 ; Hash/Pound
@@ -24,16 +24,17 @@ fontDef
           .byt  %00010100
 
 ; Dollar
-          .byt  %01001110
-          .byt  %11110011
+          .byt  %11001110
+          .byt  %01110011
 
 ; Percent
-          .byt  %01100001
-          .byt  %00011100
+          .byt  %00010010
+          .byt  %01001000
 
 ; Ampersand
-          .byt  %00101110
-          .byt  %01010001
+          .byt  %01111110
+          .byt  %01011110
+
 
 ; Single quote
           .byt  %00000000
@@ -68,8 +69,8 @@ fontDef
           .byt  %01100000
 
 ; Slash
-          .byt  %01100000
-          .byt  %00011100
+          .byt  %01110000
+          .byt  %00001110
 
 ; Zero
           .byt  %01111111
@@ -80,15 +81,15 @@ fontDef
           .byt  %01111111
 
 ; Two
-          .byt  %01111001
-          .byt  %01000111
+          .byt  %01110001
+          .byt  %01001111
 
 ; Three
           .byt  %01001001
           .byt  %01111111
 
 ; Four
-          .byt  %00011110
+          .byt  %00011111
           .byt  %01110000
 
 ; Five
@@ -132,33 +133,32 @@ fontDef
           .byt  %00011000
 
 ; Question mark
-          .byt  %00000010
           .byt  %01011001
-          ;.byt  %00000110
+          .byt  %00000110
 
 ; At sign
           .byt  %00111110
           .byt  %01011001
 
-chA       .byt  %00111000
-          .byt  %00100100
+chA       .byt  %00111100
+          .byt  %01111100
 
 chB       .byt  %00111111
           .byt  %00111000
 
-chC       .byt  %00111110
-          .byt  %00100010
+chC       .byt  %00111100
+          .byt  %00100100
 
 chD       .byt  %00111000
           .byt  %00111111
 
-chE       .byt  %00111110
-          .byt  %00100110
+chE       .byt  %00111100
+          .byt  %00101100
 
-chF       .byt  %00111111
-          .byt  %00000101
+chF       .byt  %00111110
+          .byt  %00001010
 
-chG       .byt  %10001100
+chG       .byt  %10011100
           .byt  %11111100
 
 chH       .byt  %00111111
@@ -170,37 +170,34 @@ chI       .byt  %00000000
 chJ       .byt  %10000000
           .byt  %01111101
 
-chK       .byt  %00011111
-          .byt  %00100010
+chK       .byt  %00001100
+          .byt  %00110011
 
 chL       .byt  %00111111
           .byt  %00100000
 
 chM       .byt  %00111110
-          .byt  %00001100
+          .byt  %00011100
 
-chN       .byt  %00111100
+chN       .byt  %00111000
           .byt  %00000100
 
 chO       .byt  %00111100
           .byt  %00111100
 
-chP       .byt  %11111000
-          .byt  %00011000
+chP       .byt  %11111100
+          .byt  %00011100
 
-chQ       .byt  %00011000
-          .byt  %11111000
+chQ       .byt  %00011100
+          .byt  %11111100
 
-;chR       .byt  %00011111
-;          .byt  %00100111
+chR       .byt  %00111100
+          .byt  %00000100
 
-chR       .byt  %00111110
-          .byt  %00000010
+chS       .byt  %00101100
+          .byt  %00110010
 
-chS       .byt  %00101110
-          .byt  %00110001
-
-chT       .byt  %00111111
+chT       .byt  %00111110
           .byt  %00100100
 
 chU       .byt  %00111100
@@ -209,25 +206,25 @@ chU       .byt  %00111100
 chV       .byt  %00011100
           .byt  %00100000
 
-chW       .byt  %00111111
-          .byt  %00111110
+chW       .byt  %00111110
+          .byt  %00111000
 
 chX       .byt  %00000110
           .byt  %00110000
 
-chY       .byt  %10011000
-          .byt  %11110000
+chY       .byt  %10011100
+          .byt  %11111000
 
-chZ       .byt  %00111001
-          .byt  %00100111
+chZ       .byt  %00110100
+          .byt  %00101100
 
 ; Left square bracket
           .byt  %01111111
           .byt  %01000001
 
 ; Backslash
-          .byt  %00011100
-          .byt  %01100000
+          .byt  %00001110
+          .byt  %01110000
 
 ; Right square bracket
           .byt  %01000001
