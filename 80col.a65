@@ -19,6 +19,9 @@ RNUMCOL     = SNUMCOL/4       ; Real number of text columns
 RNUMROW     = SNUMROW         ; Real number of text rows
 SLSTCOL     = SNUMCOL-1       ; Last simulated column
 
+; Colour constants
+CLBLACK     = 00
+CLBLUE      = 06
 
 ; VIC Registers
 VICCR1      = $9001           ; Vertical TV picture origin
@@ -29,7 +32,7 @@ VICCR5      = $9005           ; Screen map and character map address
 ; Display memory location constants
 CHRMAPBASE  = $1000           ; Base address of character map
 SCRBASE     = $1E00           ; Base address of screen
-COLMAPBASE  = $9400           ; Base address of colour map
+COLMAPBASE  = $9600           ; Base address of colour map
 
 
 ; Zero Page Variable Locations
@@ -84,9 +87,14 @@ cfgScr      lda  #RVTVORIGIN
             ;-----------------------------------------------
 initClr     .(
             ldy  #00
-loop        lda  #00
-            sta  COLMAPBASE, y
-            iny
+            lda  #CLBLACK
+loop        sta  COLMAPBASE, y
+            cmp  #CLBLACK
+            beq  toBlue
+            lda  #CLBLACK
+            jmp  next
+toBlue      lda  #CLBLUE
+next        iny
             bne  loop
             rts
 .)
