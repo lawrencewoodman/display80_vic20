@@ -62,17 +62,19 @@ msg         .aasc "80 columns on the Commodore VIC-20!",NL
             .aasc NL
             .aasc "Supports Newline (software definable) and ASCII 32-95.  "
             .aasc "The fonts are 2*8.  "
-            .aasc "The fonts use a mixture of uppercase and lowercase to "
-            .aasc "help differentiate the characters and also uses descenders "
-            .aasc "for the same reason.",NL
+            .aasc "The characters use height and descenders to help "
+            .aasc "differentiate the characters.  The numbers are taller for "
+            .aasc "the same reason.",NL
             .aasc NL
             .aasc "The standard text mode is 80*12", NL
             .aasc NL
-            .aasc "The alphabet:                  The numbers:",NL
-            .aasc "  abcdefghijklmnopqrstuvwxyz   "
-            .aasc "  0123456789",NL
+            .aasc "The alphabet:",NL
+            .aasc "  a b c d e f g h i j k l m n o p q r s t u v w x y z",NL
+            .aasc "The numbers:",NL
+            .aasc "  0 1 2 3 4 5 6 7 8 9",NL
             .aasc "The rest:",NL
-            .aasc "  !",34,"#$%&'()*+,-./:;<=>?@[\]^_",NL
+            .aasc "  ! ", 34, " # $ % & ' ( ) * + , - . / : ; < = > ? @ "
+            .aasc "[ \ ] ^ _",NL
             .aasc  NL
             .aasc "Where there's a will there's a way!",NL
             .aasc  NL,0
