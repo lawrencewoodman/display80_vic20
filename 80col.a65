@@ -10,13 +10,15 @@
 ; Configuration
 SNUMCOL     = 80              ; Side number of text columns
                               ; Must be divisible by 4
-SNUMROW     = 12              ; Side number of text rows
+SNUMROW     = 22              ; Side number of text rows
+                              ; Must be divisible by 2
+                              ; TODO See if can raise to 24 by overlapping
 RVTVORIGIN  = 20              ; Vertical TV picture origin
 NL          = $0A             ; Newline character
 
 ; Calculated dimensions
 RNUMCOL     = SNUMCOL/4       ; Real number of text columns
-RNUMROW     = SNUMROW         ; Real number of text rows
+RNUMROW     = SNUMROW/2       ; Real number of text rows
 SLSTCOL     = SNUMCOL-1       ; Last simulated column
 
 ; Colour constants
@@ -39,6 +41,7 @@ COLMAPBASE  = $9600           ; Base address of colour map
 CHRADDR     = $01             ; 16-bit character map address
                               ; used for calculations
 CHQUARTER   = $03             ; Quarter of character definition right to left
+CHHALFOFF   = $04             ; Half of character definition offset (half*8)
 CHDEFADDR   = $09             ; 16-bit character def address
 CRX         = $0B             ; Cursor x position on simulated screen
 CRY         = $0C             ; Cursor y position on simulated screen
@@ -70,11 +73,9 @@ cfgScr      lda  #RVTVORIGIN
             lda  #(128|RNUMCOL)
             sta  VICCR2       ; Set number of columns displayed
                               ; and screen address
-            ;lda  #((RNUMROW*2)+1)
-            lda  #(RNUMROW*2)
+            lda  #((RNUMROW*2)+1)
             sta  VICCR3       ; Set number of rows displayed
                               ; and character size
-                              ; TODO check comment above about char size
             lda  #(240|12)    ; Set screen and character map addresses
                               ; to $1E00 and $1000
             sta  VICCR5
@@ -139,12 +140,12 @@ doneInc     lda  CHRADDR+1
 
             ;-----------------------------------------
             ; scrollup
-            ; Scroll the text up one line
+            ; Scroll the text up two lines
             ;-----------------------------------------
 scrollup    .(
-            lda  #<(CHRMAPBASE+8*RNUMCOL)    ; Set copy start locations
+            lda  #<(CHRMAPBASE+16*RNUMCOL)   ; Set copy start locations
             sta  SFROM                       ; |
-            lda  #>(CHRMAPBASE+8*RNUMCOL)    ; |
+            lda  #>(CHRMAPBASE+16*RNUMCOL)   ; |
             sta  SFROM+1                     ; |
             lda  #<CHRMAPBASE                ; |
             sta  STO                         ; |
@@ -152,7 +153,7 @@ scrollup    .(
             sta  STO+1                       ; /
 
             ldy  #0
-            ldx  #>(8*RNUMCOL*(RNUMROW-1))   ; msb size of move
+            ldx  #>(16*RNUMCOL*(RNUMROW-1))  ; msb size of move
             beq  partPage
 pageLoop    lda  (SFROM),y                   ; Copy a page
             sta  (STO),y                     ; |
@@ -162,7 +163,7 @@ pageLoop    lda  (SFROM),y                   ; Copy a page
             inc  STO+1                       ; /
             dex
             bne  pageLoop
-partPage    ldx  #<(8*RNUMCOL*(RNUMROW-1))
+partPage    ldx  #<(16*RNUMCOL*(RNUMROW-1))
             beq  wipe
 partLoop    lda  (SFROM),y                   ; Copy remainder
             sta  (STO),y                     ; |
@@ -170,16 +171,29 @@ partLoop    lda  (SFROM),y                   ; Copy remainder
             dex                              ; |
             bne  partLoop                    ; /
 
-            ; Wipe last line
-wipe        lda   #<(CHRMAPBASE+(8*RNUMCOL*(RNUMROW-1)))
-            sta   STO
-            lda   #>(CHRMAPBASE+(8*RNUMCOL*(RNUMROW-1)))
-            sta   STO+1
-            ldy   #$FF
-            lda   #00
-wipeLoop    sta   (STO),y
+            ; Wipe last two lines
+wipe        lda  #<(CHRMAPBASE+(16*RNUMCOL*(RNUMROW-1)))
+            sta  STO
+            lda  #>(CHRMAPBASE+(16*RNUMCOL*(RNUMROW-1)))
+            sta  STO+1
+            ldy  #$FF
+            lda  #00
+wipeLoop1   sta  (STO),y
             dey
-            bne   wipeLoop
+            cpy  #$FF
+            bne  wipeLoop1
+
+            lda  #<(CHRMAPBASE+(16*RNUMCOL*(RNUMROW-1))+256)
+            sta  STO
+            lda  #>(CHRMAPBASE+(16*RNUMCOL*(RNUMROW-1))+256)
+            sta  STO+1
+            ldy  #(16*RNUMCOL-256)
+            lda  #00
+wipeLoop2   sta  (STO),y
+            dey
+            cpy  #$FF
+            bne  wipeLoop2
+
             rts
 .)
 
@@ -212,12 +226,14 @@ putch       .(
 newline     lda  #0
             sta  CRX
             lda  CRY
-            cmp  #(RNUMROW-1)
+            cmp  #(SNUMROW-1)
             beq  scroll       ; Scroll up if on last line
             inc  CRY
             bne  done         ; Equivalant to JMP
 
 scroll      jsr  scrollup
+            lda  #(SNUMROW-2)
+            sta  CRY
             jmp  done
 
 nextCol     inc  CRX
@@ -249,21 +265,34 @@ storeCh     pha               ; Push character to stack
             ; TODO tidy this up
             txa
             and  #3           ; Look at right 2 bits
-            sta  CHQUARTER    ;
+            sta  CHQUARTER
             lda  #3
             sec
             sbc  CHQUARTER
             sta  CHQUARTER
-            txa
+
+            ; Find which half of a character definition
+            ; and store the offset
+            tya
+            clc
+            and  #1
+            asl               ; Multiply by 8
+            asl               ; |
+            asl               ; /
+            sta  CHHALFOFF
 
             ; Find location of simulated column pair
-findCol     lsr               ; Quarter the column
-            lsr               ; /
-            sta  CHRADDR      ; lsb
+findCol     txa
+            lsr               ; Quarter the column
+            lsr               ; |
+            sta  CHRADDR      ; /   lsb
 
             ; Find location of row
+            tya               ; Half the row
+            lsr               ; |
+            tay               ; /
 findRow     cpy  #00
-            beq  mul8
+            beq  mul16
             ; Add number of real columns to address
             clc
             lda  CHRADDR      ; lsb
@@ -275,10 +304,12 @@ addDone1    dey
             jmp  findRow
 
 
-mul8        ; TODO find better name
+mul16        ; TODO find better name
 
-            ; Multiply by 8 to find location of character
-            ; Shift left 3 times to multiply by 8
+            ; Multiply by 16 to find location of character
+            ; Shift left 4 times to multiply by 16
+            asl  CHRADDR       ; lsb
+            rol  CHRADDR+1     ; msb
             asl  CHRADDR       ; lsb
             rol  CHRADDR+1     ; msb
             asl  CHRADDR       ; lsb
@@ -291,6 +322,14 @@ mul8        ; TODO find better name
             lda  CHRADDR+1    ; msb
             adc  #>CHRMAPBASE
             sta  CHRADDR+1    ; msb
+
+            ; Add CHHALFOFF offset to character map address
+            ; This locates in the top or bottom half of the character
+            ; definition
+            clc
+            lda  CHRADDR
+            adc  CHHALFOFF
+            sta  CHRADDR
 
             ; Copy the character to the screen
 copyCh      lda  #00

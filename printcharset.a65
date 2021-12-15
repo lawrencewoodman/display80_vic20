@@ -62,11 +62,11 @@ main        jsr  SP_init
             jsr  putchxy
             lda  #74
             ldx  #78
-            ldy  #11
+            ldy  #21
             jsr  putchxy
             lda  #75
             ldx  #79
-            ldy  #11
+            ldy  #21
             jsr  putchxy
 
 
