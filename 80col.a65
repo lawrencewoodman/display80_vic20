@@ -176,23 +176,19 @@ wipe        lda  #<(CHRMAPBASE+(16*RNUMCOL*(RNUMROW-1)))
             sta  STO
             lda  #>(CHRMAPBASE+(16*RNUMCOL*(RNUMROW-1)))
             sta  STO+1
-            ldy  #$FF
-            lda  #00
-wipeLoop1   sta  (STO),y
+            ldx  #2           ; Wipe a page and a bit
+            ldy  #$FF         ; Wipe a page of memory containing two lines
+            lda  #00          ; Use a space to wipe the lines
+wipeLoop    sta  (STO),y
             dey
             cpy  #$FF
-            bne  wipeLoop1
+            bne  wipeLoop
 
-            lda  #<(CHRMAPBASE+(16*RNUMCOL*(RNUMROW-1))+256)
-            sta  STO
-            lda  #>(CHRMAPBASE+(16*RNUMCOL*(RNUMROW-1))+256)
-            sta  STO+1
+            ; Setup the remainder of the page to be deleted
+            inc  STO+1
             ldy  #(16*RNUMCOL-256)
-            lda  #00
-wipeLoop2   sta  (STO),y
-            dey
-            cpy  #$FF
-            bne  wipeLoop2
+            dex
+            bne  wipeLoop
 
             rts
 .)
