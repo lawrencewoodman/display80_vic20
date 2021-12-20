@@ -1,0 +1,115 @@
+;=====================================================================
+; Tests backspace works properly
+;---------------------------------------------------------------------
+; Requires 8k+ memory
+;---------------------------------------------------------------------
+; Copyright (C) 2021 Lawrence Woodman <lwoodman@vlifesystems.com>
+; Licensed under an MIT licence.  Please see LICENCE.md for details.
+;=====================================================================
+
+FDX         = $CB             ; Matrix key coordinate of key press
+
+            .byt  $00, $20    ; Load address ($2000 / 8192)
+
+            * = $2000
+            jmp  main
+#include "80col.a65"
+
+main        .(
+            jsr  SP_init
+
+forever     lda  #0
+            sta  CRX
+            sta  CRY
+
+            lda  #<msgA
+            sta  STRADDR
+            lda  #>msgA
+            sta  STRADDR+1
+            jsr  puts
+            jsr  delay
+
+            lda  #<msgA
+            sta  STRADDR
+            lda  #>msgA
+            sta  STRADDR+1
+            jsr  delStr
+            jsr  delay
+
+            lda  #<msgA
+            sta  STRADDR
+            lda  #>msgA
+            sta  STRADDR+1
+            jsr  delStr
+            jsr  delay
+
+            lda  #60
+            sta  CRX
+            lda  #1
+            sta  CRY
+            lda  #<msgB
+            sta  STRADDR
+            lda  #>msgB
+            sta  STRADDR+1
+            jsr  puts
+            jsr  delay
+
+            lda  #<msgA
+            sta  STRADDR
+            lda  #>msgA
+            sta  STRADDR+1
+            jsr  puts
+            jsr  delay
+
+            lda  #<msgA
+            sta  STRADDR
+            lda  #>msgA
+            sta  STRADDR+1
+            jsr  delStr
+            jsr  delay
+
+            lda  #<msgB
+            sta  STRADDR
+            lda  #>msgB
+            sta  STRADDR+1
+            jsr  delStr
+            jsr  delay
+
+            jmp  forever
+.)
+
+delay       .(
+getKey      lda  FDX
+            cmp  #64          ; No key pressed
+            bne  getKey       ; Wait if key pressed
+
+            ; Wait for a little bit
+            ldx  #$90
+loop1       ldy  #$FF
+loop2       dey
+            bne  loop2
+            dex
+            bne  loop1
+            rts
+.)
+
+
+            ; Output same number of backspaces as in zstring at STRADDR
+delStr      .(
+            ldy  #0
+loop        lda  (STRADDR), y
+            beq  done
+            tya
+            pha
+            lda  #BS
+            jsr  putch
+            pla
+            tay
+            iny
+            jmp  loop
+done        rts
+.)
+
+
+msgA        .aasc "This is a some text to be deleted",0
+msgB        .aasc "!This is also some text to be deleted!",0

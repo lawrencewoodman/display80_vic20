@@ -8,13 +8,16 @@
 ;=====================================================================
 
 ; Configuration
-SNUMCOL     = 80              ; Side number of text columns
+SNUMCOL     = 80              ; Number of simulated text columns
                               ; Must be divisible by 4
-SNUMROW     = 22              ; Side number of text rows
+SNUMROW     = 22              ; Number of simulated text rows
                               ; Must be divisible by 2
-                              ; TODO See if can raise to 24 by overlapping
 RVTVORIGIN  = 20              ; Vertical TV picture origin
 NL          = $0A             ; Newline character
+
+; ASCII characters
+SPACE       = 32              ; Space character
+BS          = 8               ; Backspace character
 
 ; Calculated dimensions
 RNUMCOL     = SNUMCOL/4       ; Real number of text columns
@@ -193,16 +196,26 @@ wipeLoop    sta  (STO),y
             rts
 .)
 
-            ;-----------------------------------------
+            ;------------------------------------------
             ; putch
             ; Print a character to screen at cursor
             ; and move cursor
-            ;-----------------------------------------
+            ; This will print NL, BS control characters
+            ; and ASCII 32-128 although these will be
+            ; folded into single case
+            ;------------------------------------------
             ; ACC - character to print
-            ;-----------------------------------------
+            ;------------------------------------------
 putch       .(
             cmp  #NL
             beq  newline      ; If newline character
+            cmp  #BS          ; If backspace character
+            beq  backspace
+
+            cmp  #SPACE       ; If acc<32 or acc>=129 then ignore
+            bcc  done         ; |
+            cmp  #129         ; |
+            bcs  done         ; /
 
             ; Print the character
             pha
@@ -227,6 +240,22 @@ newline     lda  #0
             inc  CRY
             bne  done         ; Equivalant to JMP
 
+backspace   ; Move cursor back one character and delete character
+            ldx  CRX          ; If at beginning of line
+            beq  crup         ; /
+            dec  CRX
+            jmp  blank
+crup        lda  CRY          ; If at top left of screen ignore key
+            beq  done         ; /
+            lda  #79          ; Move to end of previous line
+            sta  CRX
+            dec  CRY
+blank       lda  SPACE        ; Blank out the character
+            ldx  CRX          ; |
+            ldy  CRY          ; |
+            jsr  putchxy      ; |
+            jmp  done         ; /
+
 scroll      jsr  scrollup
             lda  #(SNUMROW-2)
             sta  CRY
@@ -240,7 +269,7 @@ done        rts
             ; putchxy
             ; Print a character to screen at position
             ; specified
-            ; This will print NL and ASCII 32-95
+            ; This will print ASCII 32-95
             ;-----------------------------------------
             ; ACC - character to print
             ;   X - Column on simulated screen
@@ -332,7 +361,7 @@ copyCh      lda  #00
             sta  CHDEFADDR+1
             pla               ; Pull character off stack
             sec
-            sbc  #32          ; Font definitions are from space onwards
+            sbc  #SPACE       ; Font definitions are from space onwards
             sta  CHDEFADDR    ; Multiply character by 2
             asl  CHDEFADDR    ; |
             rol  CHDEFADDR+1  ; /
