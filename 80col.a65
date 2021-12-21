@@ -426,37 +426,47 @@ alignDoneQ
             ; This gets the existing definition, clears the bits
             ; where this character will go and ORs the remaining
             ; bits with the new character.
-            ldx  #7
             ldy  #7
-copyLoop    lda  CHQUARTER
+            lda  CHQUARTER
             cmp  #00
             beq  q0
             cmp  #01
             beq  q1
             cmp  #02
             beq  q2
+
 q3          lda  (CHRADDR),y
             and  #$3F
-            ora  CHDEF, x
-            jmp  setCh
+            ora  CHDEF, y
+            sta  (CHRADDR),y
+            dey
+            bpl  q3
+            jmp  done
+
 q2          lda  (CHRADDR),y
             and  #$CF
-            ora  CHDEF, x
-            jmp  setCh
+            ora  CHDEF, y
+            sta  (CHRADDR),y
+            dey
+            bpl  q2
+            jmp  done
+
 q1          lda  (CHRADDR),y
             and  #$F3
-            ora  CHDEF, x
-            jmp  setCh
+            ora  CHDEF, y
+            sta  (CHRADDR),y
+            dey
+            bpl  q1
+            jmp  done
+
 q0          lda  (CHRADDR),y
             and  #$FC
-            ora  CHDEF, x
-setCh       sta  (CHRADDR),y
-            dex
+            ora  CHDEF, y
+            sta  (CHRADDR),y
             dey
-            cpy  #$FF
-            bne  copyLoop
+            bpl  q0
 
-            rts
+done        rts
 .)
 
 
