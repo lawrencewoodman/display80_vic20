@@ -323,8 +323,6 @@ findRow     cpy  #00
             lda  CHRADDR      ; lsb
             adc  #RNUMCOL
             sta  CHRADDR      ; lsb
-            bcc  addDone1
-            inc  CHRADDR+1    ; msb
 addDone1    dey
             jmp  findRow
 
