@@ -54,10 +54,10 @@ STO         = $12             ; 16-bit scroll to address
 CHDEF       = $14             ; 8 bytes defining a character
 
             ;--------------------------------
-            ; SP_init
-            ; Init sideways printing screen
+            ; v80_init
+            ; Init 80 character screen
             ;--------------------------------
-SP_init     lda  #00          ; Init cursor to top left of screen
+v80_init    lda  #00          ; Init cursor to top left of screen
             sta  CRX          ; |
             sta  CRY          ; /
             jsr  cfgScr       ; Configure screen

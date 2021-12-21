@@ -14,7 +14,7 @@
             jmp  main
 #include "80col.a65"
 
-main        jsr  SP_init
+main        jsr  v80_init
 
             lda  #10
             sta  CRX

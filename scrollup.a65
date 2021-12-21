@@ -16,7 +16,7 @@ FDX         = $CB             ; Matrix key coordinate of key press
 #include "80col.a65"
 
 main        .(
-            jsr  SP_init
+            jsr  v80_init
 
 forever     lda  #<msg
             sta  STRADDR
