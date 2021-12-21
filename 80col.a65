@@ -250,7 +250,7 @@ crup        lda  CRY          ; If at top left of screen ignore key
             lda  #79          ; Move to end of previous line
             sta  CRX
             dec  CRY
-blank       lda  SPACE        ; Blank out the character
+blank       lda  #SPACE       ; Blank out the character
             ldx  CRX          ; |
             ldy  CRY          ; |
             jsr  putchxy      ; |
