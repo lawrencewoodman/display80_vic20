@@ -1,11 +1,14 @@
 ;=====================================================================
-; Print text using a 2x8 font
+; Print text using a 2x8 font on either an 80 column screen
+; or moving window 20 column screen
 ;---------------------------------------------------------------------
 ; Requires 8k+ memory
 ;---------------------------------------------------------------------
 ; Copyright (C) 2021 Lawrence Woodman <lwoodman@vlifesystems.com>
 ; Licensed under an MIT licence.  Please see LICENCE.md for details.
 ;=====================================================================
+
+; TODO perhaps call this 8020col rather than 80col
 
 ; Configuration
 SNUMCOL     = 80              ; Number of simulated text columns
@@ -19,14 +22,22 @@ NL          = $0A             ; Newline character
 SPACE       = 32              ; Space character
 BS          = 8               ; Backspace character
 
-; Calculated dimensions
-RNUMCOL     = SNUMCOL/4       ; Real number of text columns
-RNUMROW     = SNUMROW/2       ; Real number of text rows
-SLSTCOL     = SNUMCOL-1       ; Last simulated column
+; Calculated dimensions for 80 column screen
+RNUMCOL80   = SNUMCOL/4       ; Real number of text columns
+RNUMROW80   = SNUMROW/2       ; Real number of text rows
+SLSTCOL80   = SNUMCOL-1       ; Last simulated column
+
+; Dimensions for 20 column screen
+RNUMCOL20   = 20
+RNUMROW20   = 22
 
 ; Colour constants
 CLBLACK     = 00
 CLBLUE      = 06
+
+; Mode constants
+MODE80      = 1               ; 80 column mode
+MODE20      = 0               ; 20 column mode
 
 ; VIC Registers
 VICCR1      = $9001           ; Vertical TV picture origin
@@ -53,30 +64,55 @@ SFROM       = $0F             ; 16-bit scroll from address
 STO         = $12             ; 16-bit scroll to address
 CHDEF       = $14             ; 8 bytes defining a character
 
+
             ;--------------------------------
-            ; v80_init
-            ; Init 80 character screen
+            ; init8020
+            ; Init 80/20 character screen
             ;--------------------------------
-v80_init    lda  #00          ; Init cursor to top left of screen
+init8020    lda  #00          ; Init cursor to top left of screen
             sta  CRX          ; |
             sta  CRY          ; /
-            jsr  cfgScr       ; Configure screen
-            jsr  initClr      ; Init the colour map
-            jsr  initScr      ; Init the screen
-            jsr  clrChMap     ; Clear character map
+            rts
+
+
+            ;--------------------------------
+            ; start80
+            ; Start 80 character screen
+            ;--------------------------------
+start80     lda  #MODE80      ; Set which mode we are in
+            sta  mode8020     ; /
+            jsr  cfgScr80     ; Configure screen
+            jsr  initClr80    ; Init the colour map
+            jsr  initScr80    ; Init the screen
+            jmp  clrScr80     ; Clear the screen by clearing character map
+
+
+            ;--------------------------------
+            ; start20
+            ; Start 20 character screen
+            ;--------------------------------
+start20     lda  #MODE20      ; Set which mode we are in
+            sta  mode8020     ; /
+            lda  #00          ; Set viewable part of screen
+            sta  viewcolge    ; |
+            lda  #20          ; |
+            sta  viewcollt    ; /
+            jsr  cfgScr20     ; Configure screen
+            jsr  initClr20    ; Init the colour map
+            jmp  clrScr20     ; Clear the screen
 
 
             ;-----------------------------------------------
-            ; cfgScr
+            ; cfgScr80
             ; Configure screen dimensions, position and
             ; memory locations
             ;-----------------------------------------------
-cfgScr      lda  #RVTVORIGIN
+cfgScr80    lda  #RVTVORIGIN
             sta  VICCR1       ; Set vertical TV origin
-            lda  #(128|RNUMCOL)
+            lda  #(128|RNUMCOL80)
             sta  VICCR2       ; Set number of columns displayed
                               ; and screen address
-            lda  #((RNUMROW*2)+1)
+            lda  #((RNUMROW80*2)+1)
             sta  VICCR3       ; Set number of rows displayed
                               ; and character size
             lda  #(240|12)    ; Set screen and character map addresses
@@ -86,10 +122,66 @@ cfgScr      lda  #RVTVORIGIN
 
 
             ;-----------------------------------------------
-            ; initClr
+            ; cfgScr20
+            ; Configure screen dimensions, position and
+            ; memory locations
+            ;-----------------------------------------------
+cfgScr20    lda  #RVTVORIGIN
+            sta  VICCR1       ; Set vertical TV origin
+            lda  #(128|RNUMCOL20)
+            sta  VICCR2       ; Set number of columns displayed
+                              ; and screen address
+            lda  #(RNUMROW20*2)
+            sta  VICCR3       ; Set number of rows displayed
+                              ; and character size
+            lda  #(240|2)     ; Set screen and character map addresses
+                              ; to $1E00 and $8800
+            sta  VICCR5
+            rts
+
+
+            ;-------------------------------------
+            ; clrScr20
+            ; Clear the screen 20 column screen
+            ;-------------------------------------
+clrScr20    .(
+            lda  #00
+            sta  CHRADDR          ; TODO Change CHRADDR to SCRADDR?
+            lda  #>SCRBASE
+            sta  CHRADDR+1
+            ldy  #00
+loop        lda  #SPACE
+            sta  (CHRADDR),y      ; Set character map location
+            inc  CHRADDR          ; Increment CHRADDR
+            bne  doneInc          ; |
+            inc  CHRADDR+1        ; /
+doneInc     lda  CHRADDR+1
+            cmp  #>$2000          ; TODO Replace with constant
+            bne  loop
+            rts
+.)
+
+
+            ;-----------------------------------------------
+            ; initClr20
             ; Init the colour map to all a single colour
             ;-----------------------------------------------
-initClr     .(
+initClr20   .(
+            ldy  #00
+            lda  #CLBLACK
+loop        sta  COLMAPBASE, y
+            iny
+            bne  loop
+            rts
+.)
+
+
+            ;-----------------------------------------------
+            ; initClr80
+            ; Init the colour map to alternate black/blue
+            ; colours to help make characters more distinct
+            ;-----------------------------------------------
+initClr80   .(
             ldy  #00
             lda  #CLBLACK
 loop        sta  COLMAPBASE, y
@@ -104,12 +196,12 @@ next        iny
 .)
 
             ;-----------------------------------------------
-            ; initScr
+            ; initScr80
             ; Fill screen map with characters needed
             ;-----------------------------------------------
             ; TODO improve this loop code
-initScr     .(
-            ldy  #(RNUMCOL*RNUMROW)
+initScr80   .(
+            ldy  #(RNUMCOL80*RNUMROW80)
 loop        tya
             sta  SCRBASE, y     ; Store character in screen map
             dey
@@ -120,10 +212,10 @@ loop        tya
 
 
             ;-----------------------------------------------
-            ; clrChMap
+            ; clrScr80
             ; Clear the screen by zeroing the character map
             ;-----------------------------------------------
-clrChMap    .(
+clrScr80    .(
             lda  #$00
             sta  CHRADDR
             lda  #>CHRMAPBASE
@@ -141,22 +233,35 @@ doneInc     lda  CHRADDR+1
 .)
 
 
-            ;-----------------------------------------
+            ;------------------------------------------
             ; scrollup
-            ; Scroll the text up two lines
-            ;-----------------------------------------
+            ; Scroll the screen up
+            ;------------------------------------------
 scrollup    .(
-            lda  #<(CHRMAPBASE+16*RNUMCOL)   ; Set copy start locations
-            sta  SFROM                       ; |
-            lda  #>(CHRMAPBASE+16*RNUMCOL)   ; |
-            sta  SFROM+1                     ; |
-            lda  #<CHRMAPBASE                ; |
-            sta  STO                         ; |
-            lda  #>CHRMAPBASE                ; |
-            sta  STO+1                       ; /
+            lda  mode8020
+            cmp  #MODE80
+            beq  is80
+is20        jmp  scrollup20
+is80        jmp  scrollup80
+.)
+
+
+            ;------------------------------------------
+            ; scrollup80
+            ; Scroll 80 column screen up up two lines
+            ;------------------------------------------
+scrollup80  .(
+            lda  #<(CHRMAPBASE+16*RNUMCOL80)  ; Set copy start locations
+            sta  SFROM                        ; |
+            lda  #>(CHRMAPBASE+16*RNUMCOL80)  ; |
+            sta  SFROM+1                      ; |
+            lda  #<CHRMAPBASE                 ; |
+            sta  STO                          ; |
+            lda  #>CHRMAPBASE                 ; |
+            sta  STO+1                        ; /
 
             ldy  #0
-            ldx  #>(16*RNUMCOL*(RNUMROW-1))  ; msb size of move
+            ldx  #>(16*RNUMCOL80*(RNUMROW80-1))  ; msb size of move
             beq  partPage
 pageLoop    lda  (SFROM),y                   ; Copy a page
             sta  (STO),y                     ; |
@@ -166,7 +271,7 @@ pageLoop    lda  (SFROM),y                   ; Copy a page
             inc  STO+1                       ; /
             dex
             bne  pageLoop
-partPage    ldx  #<(16*RNUMCOL*(RNUMROW-1))
+partPage    ldx  #<(16*RNUMCOL80*(RNUMROW80-1))
             beq  wipe
 partLoop    lda  (SFROM),y                   ; Copy remainder
             sta  (STO),y                     ; |
@@ -175,9 +280,9 @@ partLoop    lda  (SFROM),y                   ; Copy remainder
             bne  partLoop                    ; /
 
             ; Wipe last two lines
-wipe        lda  #<(CHRMAPBASE+(16*RNUMCOL*(RNUMROW-1)))
+wipe        lda  #<(CHRMAPBASE+(16*RNUMCOL80*(RNUMROW80-1)))
             sta  STO
-            lda  #>(CHRMAPBASE+(16*RNUMCOL*(RNUMROW-1)))
+            lda  #>(CHRMAPBASE+(16*RNUMCOL80*(RNUMROW80-1)))
             sta  STO+1
             ldx  #2           ; Wipe a page and a bit
             ldy  #$FF         ; Wipe a page of memory containing two lines
@@ -189,9 +294,63 @@ wipeLoop    sta  (STO),y
 
             ; Setup the remainder of the page to be deleted
             inc  STO+1
-            ldy  #(16*RNUMCOL-256)
+            ldy  #(16*RNUMCOL80-256)
             dex
             bne  wipeLoop
+
+            lda  #(SNUMROW-2)      ; Set the cursor to one line up from bottom
+            sta  CRY
+
+            rts
+.)
+
+
+            ;-----------------------------------------
+            ; scrollup20
+            ; Scroll 20 column screen up one line
+            ;-----------------------------------------
+scrollup20  .(
+            lda  #<(SCRBASE+RNUMCOL20)  ; Set copy start locations
+            sta  SFROM                  ; |
+            lda  #>(SCRBASE+RNUMCOL20)  ; |
+            sta  SFROM+1                ; |
+            lda  #<SCRBASE              ; |
+            sta  STO                    ; |
+            lda  #>SCRBASE              ; |
+            sta  STO+1                  ; /
+
+            ldy  #0
+            ldx  #>(RNUMCOL20*(RNUMROW20-1))  ; msb size of move
+            beq  partPage
+pageLoop    lda  (SFROM),y                    ; Copy a page
+            sta  (STO),y                      ; |
+            iny                               ; |
+            bne  pageLoop                     ; /
+            inc  SFROM+1                      ; Next page
+            inc  STO+1                        ; /
+            dex
+            bne  pageLoop
+partPage    ldx  #<(RNUMCOL20*(RNUMROW20-1))
+            beq  wipe
+partLoop    lda  (SFROM),y                   ; Copy remainder
+            sta  (STO),y                     ; |
+            iny                              ; |
+            dex                              ; |
+            bne  partLoop                    ; /
+
+            ; Wipe last line
+wipe        lda  #<(SCRBASE+(RNUMCOL20*(RNUMROW20-1)))
+            sta  STO
+            lda  #>(SCRBASE+(RNUMCOL20*(RNUMROW20-1)))
+            sta  STO+1
+            ldy  #RNUMCOL20      ; Wipe a line of characters
+            lda  #SPACE          ; Use a space to wipe the lines
+wipeLoop    sta  (STO),y
+            dey
+            bpl  wipeLoop
+
+            lda  #(SNUMROW-1)      ; Set the cursor to the bottom line
+            sta  CRY
 
             rts
 .)
@@ -228,7 +387,7 @@ putch       .(
 
             ; Move cursor
             lda  CRX
-            cmp  #SLSTCOL
+            cmp  #SLSTCOL80
             bne  nextCol
 
             ; Move cursor to next line
@@ -257,25 +416,107 @@ blank       lda  #SPACE       ; Blank out the character
             jmp  done         ; /
 
 scroll      jsr  scrollup
-            lda  #(SNUMROW-2)
-            sta  CRY
             jmp  done
 
 nextCol     inc  CRX
 done        rts
 .)
 
+
             ;-----------------------------------------
             ; putchxy
             ; Print a character to screen at position
-            ; specified
-            ; This will print ASCII 32-95
+            ; specified on either the 80 columns or
+            ; 20 column screen
             ;-----------------------------------------
             ; ACC - character to print
             ;   X - Column on simulated screen
             ;   Y - Row on simulated screen
             ;-----------------------------------------
 putchxy     .(
+            pha               ; Push the character to the stack
+            lda  mode8020
+            cmp  #MODE80
+            beq  is80
+is20        pla
+            jmp  putchxy20         ; Will return from here
+is80        pla
+            jmp  putchxy80         ; Will return from here
+.)
+
+
+            ;-----------------------------------------
+            ; putchxy20
+            ; Print a character to screen at position
+            ; specified on 20 column screen
+            ;-----------------------------------------
+            ; ACC - character to print (ASCII)
+            ;   X - Column on simulated screen
+            ;   Y - Row on simulated screen
+            ;-----------------------------------------
+putchxy20   .(
+            ; TODO use different location than CHRADDR, maybe SCRADDR
+
+            ; See if in visible quarter of screen
+            cpx  viewcolge
+            bcs  ge
+            jmp  done
+ge          cpx  viewcollt
+            bcc  inView
+            jmp  done
+
+inView      ; The location is in view
+            pha               ; Push character to stack
+            sec               ; Align x with first column
+            txa               ; |
+            sbc  viewcolge    ; |
+            tax               ; /
+
+            ; Find column
+findCol     txa
+            sta  CHRADDR      ; Store column to CHRADDR  - lsb
+            lda  #$00         ; |
+            sta  CHRADDR+1    ; /   msb
+
+
+            ; Find location of row
+findRow     cpy  #00
+            beq  addScrAddr
+            ; Add number of real columns to address
+            clc
+            lda  CHRADDR      ; lsb
+            adc  #RNUMCOL20
+            sta  CHRADDR      ; lsb
+            bcc  noCarry
+            inc  CHRADDR+1    ; msb
+noCarry     dey
+            jmp  findRow
+
+            ; Add $1E00 as address of screen
+addScrAddr  clc
+            lda  CHRADDR+1    ; msb
+            adc  #>SCRBASE
+            sta  CHRADDR+1    ; msb
+
+storeCh     pla
+            jsr  asctocbm
+            ldy  #00
+            sta  (CHRADDR), y
+done        rts
+.)
+
+
+            ;-----------------------------------------
+            ; putchxy80
+            ; Print a character to screen at position
+            ; specified on 80 column screen
+            ; This will print ASCII 32-95
+            ;-----------------------------------------
+            ; ACC - character to print (ASCII)
+            ;   X - Column on simulated screen
+            ;   Y - Row on simulated screen
+            ;-----------------------------------------
+putchxy80   .(
             cmp  #95
             bcc  storeCh      ; If <= 95
             and  #$5F         ; Drop bit 5 (upcase)
@@ -306,6 +547,7 @@ storeCh     pha               ; Push character to stack
             asl               ; /
             sta  CHHALFOFF
 
+            ; TODO Put this where zero CHRADDR is above
             ; Find location of simulated column pair
 findCol     txa
             lsr               ; Quarter the column
@@ -321,9 +563,9 @@ findRow     cpy  #00
             ; Add number of real columns to address
             clc
             lda  CHRADDR      ; lsb
-            adc  #RNUMCOL
+            adc  #RNUMCOL80
             sta  CHRADDR      ; lsb
-addDone1    dey
+            dey
             jmp  findRow
 
 
@@ -492,5 +734,50 @@ incDone
 done        rts
 .)
 
+
+
+            ; Convert ASCII to PETSCII
+asctocbm    .(
+            cmp  #32
+            bcs  ge32
+            cmp  #13          ; If acc==13, return
+            beq  done
+            cmp  #8
+            beq  isDel
+            jmp  zero
+ge32        cmp  #65          ; If acc>=32 and acc<=64, return
+            bcc  done
+            cmp  #91
+            bcs  ge91
+            ; If acc>=65 and acc<=90 then acc=acc+128, return
+            clc
+            adc  #128
+            jmp  done
+ge91        cmp  #96          ; If acc>=91 and acc <=95, return
+            bcc  done
+            cmp  #97          ; If acc >= 97
+            bcs  ge97
+            ; If acc==96 or acc>=123 or (acc<32 and acc!=8 and acc!=13)
+zero        lda  #00
+            jmp  done
+ge97        cmp  #123
+            bcs  zero
+            ; If acc>=97 and acc<=122 then acc=acc-32, return
+            sec
+            sbc  #32
+            jmp  done
+            ; If acc==8 then acc=20, return
+isDel       clc
+            lda  #20
+done        rts
+.)
+
+;====================================
+; Data
+;====================================
+
+mode8020    .byt MODE20       ; Whether in 80 or 20 colummn mode
+viewcolge   .byt 0            ; Viewable window for 20 columns - col >= val
+viewcollt   .byt 0            ; Viewable window for 20 columns - col < val
 
 #include "fontdef.a65"        ; The font definitions

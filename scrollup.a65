@@ -16,7 +16,8 @@ FDX         = $CB             ; Matrix key coordinate of key press
 #include "80col.a65"
 
 main        .(
-            jsr  v80_init
+            jsr  init8020
+            jsr  start80
 
 forever     lda  #<msg
             sta  STRADDR
@@ -57,6 +58,9 @@ incDone
             jmp  loop
 done        rts
 .)
+
+; TODO update text to better reflect 80/20 modes and how ASCII works in the
+; TODO different modes
 
 msg         .aasc "80 columns on the Commodore VIC-20!",NL
             .aasc NL
