@@ -93,14 +93,53 @@ start80     lda  #MODE80      ; Set which mode we are in
             ;--------------------------------
 start20     lda  #MODE20      ; Set which mode we are in
             sta  mode8020     ; /
-            lda  #00          ; Set viewable part of screen
-            sta  viewcolge    ; |
-            lda  #20          ; |
-            sta  viewcollt    ; /
+            lda  #1           ; Set viewable part of screen to first quarter
+            jsr  setView20    ; /
             jsr  cfgScr20     ; Configure screen
             jsr  initClr20    ; Init the colour map
             jmp  clrScr20     ; Clear the screen
 
+
+            ;-----------------------------------------------
+            ; setView20
+            ; Set the view window on the 20 column screen
+            ;-----------------------------------------------
+            ; ACC - Quarter to display (1-4)
+            ;-----------------------------------------------
+setView20   .(
+            cmp  #1
+            beq  q1
+            cmp  #2
+            beq  q2
+            cmp  #3
+            beq  q3
+            cmp  #4
+            beq  q4
+            bne  done
+
+q1          lda  #00          ; Set viewable part of screen
+            sta  viewcolge    ; |
+            lda  #20          ; |
+            sta  viewcollt    ; /
+            jmp  done
+q2          lda  #20          ; Set viewable part of screen
+            sta  viewcolge    ; |
+            lda  #40          ; |
+            sta  viewcollt    ; /
+            jmp  done
+q3          lda  #40          ; Set viewable part of screen
+            sta  viewcolge    ; |
+            lda  #60          ; |
+            sta  viewcollt    ; /
+            jmp  done
+q4          lda  #60          ; Set viewable part of screen
+            sta  viewcolge    ; |
+            lda  #80          ; |
+            sta  viewcollt    ; /
+            jmp  done
+
+done        rts
+.)
 
             ;-----------------------------------------------
             ; cfgScr80

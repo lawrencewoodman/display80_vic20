@@ -7,7 +7,20 @@
 ; Licensed under an MIT licence.  Please see LICENCE.md for details.
 ;=====================================================================
 
+; Locations in zero page
 FDX         = $CB             ; Matrix key coordinate of key press
+
+; KERNAL routines
+CHKIN       = $FFC6           ; Open a channel for input
+GETIN       = $FFE4           ; Get a character from the keyboard buffer
+
+; Key constants
+F1          = 133
+F2          = 137
+F3          = 134
+F5          = 135
+F7          = 136
+
 
             .byt  $00, $20    ; Load address ($2000 / 8192)
 
@@ -17,7 +30,7 @@ FDX         = $CB             ; Matrix key coordinate of key press
 
 main        .(
             jsr  init8020
-            jsr  start80
+            jsr  start20
 
 forever     lda  #<msg
             sta  STRADDR
@@ -27,13 +40,45 @@ forever     lda  #<msg
             jmp  forever
 .)
 
+
 delay       .(
 getKey      lda  FDX
             cmp  #64          ; No key pressed
             bne  getKey       ; Wait if key pressed
 
+            jsr  GETIN
+            cmp  #F1
+            beq  cols20_q1
+            cmp  #F3
+            beq  cols20_q2
+            cmp  #F5
+            beq  cols20_q3
+            cmp  #F7
+            beq  cols20_q4
+            cmp  #F2
+            beq  cols80
+            bne  wait
+
+cols20_q1   jsr  start20
+            lda  #1
+            jsr  setView20
+            jmp  wait
+cols20_q2   jsr  start20
+            lda  #2
+            jsr  setView20
+            jmp  wait
+cols20_q3   jsr  start20
+            lda  #3
+            jsr  setView20
+            jmp  wait
+cols20_q4   jsr  start20
+            lda  #4
+            jsr  setView20
+            jmp  wait
+cols80      jsr  start80
+
             ; Wait for a little bit
-            ldx  #$10
+wait        ldx  #$10
 loop1       ldy  #$FF
 loop2       dey
             bne  loop2
