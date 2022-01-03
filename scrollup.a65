@@ -20,6 +20,7 @@ F2          = 137
 F3          = 134
 F5          = 135
 F7          = 136
+KEYP        = 80              ; The P key
 
 
             .byt  $00, $20    ; Load address ($2000 / 8192)
@@ -31,6 +32,8 @@ F7          = 136
 main        .(
             jsr  init8020
             jsr  start20
+            lda  #00
+            sta  pause
 
 forever     lda  #<msg
             sta  STRADDR
@@ -57,25 +60,41 @@ getKey      lda  FDX
             beq  cols20_q4
             cmp  #F2
             beq  cols80
+            cmp  #KEYP
+            beq  keyP
             bne  wait
 
 cols20_q1   jsr  start20
             lda  #1
             jsr  setView20
+            jsr  redraw
             jmp  wait
 cols20_q2   jsr  start20
             lda  #2
             jsr  setView20
+            jsr  redraw
             jmp  wait
 cols20_q3   jsr  start20
             lda  #3
             jsr  setView20
+            jsr  redraw
             jmp  wait
 cols20_q4   jsr  start20
             lda  #4
             jsr  setView20
+            jsr  redraw
             jmp  wait
 cols80      jsr  start80
+            jsr  redraw
+            jmp  wait
+
+keyP        lda  pause
+            beq  setPause
+            lda  #0
+            sta  pause
+            jmp  wait
+setPause    lda  #1
+            sta  pause
 
             ; Wait for a little bit
 wait        ldx  #$10
@@ -95,7 +114,10 @@ loop        ldy  #00
             jsr  putch
             lda  CRX
             bne  notFirstCol  ; If in first column
-            jsr  delay
+pauseLoop   jsr  delay
+            lda  pause
+            bne  pauseLoop
+
 notFirstCol inc  STRADDR      ; Increment STRADDR
             bne  incDone      ; |
             inc  STRADDR+1    ; /
@@ -104,9 +126,12 @@ incDone
 done        rts
 .)
 
+
+pause       .byt 0
+
+
 ; TODO update text to better reflect 80/20 modes and how ASCII works in the
 ; TODO different modes
-
 msg         .aasc "80 columns on the Commodore VIC-20!",NL
             .aasc NL
             .aasc "Supports Newline (software definable) and ASCII 32-95.  "
@@ -129,3 +154,5 @@ msg         .aasc "80 columns on the Commodore VIC-20!",NL
             .aasc  NL,0
 
 ; TODO Decide if want to show 'The rest' above
+
+shadScr8020 ; The shadow screen with room for 80x22 bytes

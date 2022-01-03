@@ -14,8 +14,8 @@
             jmp  main
 #include "80col.a65"
 
-main        jsr  v80_init
-
+main        jsr  init8020
+            jsr  start80
             lda  #10
             sta  CRX
             lda  #05
@@ -48,3 +48,5 @@ forever     jmp  forever
 
 
 helloStr    .aasc "HELLO WORLD",0
+
+shadScr8020 ; The shadow screen with room for 80x22 bytes

@@ -16,7 +16,8 @@ FDX         = $CB             ; Matrix key coordinate of key press
 #include "80col.a65"
 
 main        .(
-            jsr  v80_init
+            jsr  init8020
+            jsr  start80
 
 forever     lda  #0
             sta  CRX
@@ -113,3 +114,5 @@ done        rts
 
 msgA        .aasc "This is a some text to be deleted",0
 msgB        .aasc "!This is also some text to be deleted!",0
+
+shadScr8020 ; The shadow screen with room for 80x22 bytes
