@@ -607,8 +607,7 @@ done        rts
             ;-----------------------------------------
 putchxy     .(
             sta tmpAcc
-            pha               ; Push the parameters to the stack
-            txa               ; |
+            txa               ; Push the X,Y parameters to the stack
             pha               ; |
             tya               ; |
             pha               ; /
@@ -621,9 +620,9 @@ putchxy     .(
             lda  mode8020
             cmp  #MODE80
             beq  is80
-is20        pla
+is20        lda  tmpAcc
             jmp  putchxy20         ; Will return from here
-is80        pla
+is80        lda  tmpAcc
             jmp  putchxy80         ; Will return from here
 .)
 
