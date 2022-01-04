@@ -112,7 +112,7 @@ loop        ldy  #00
             lda  (STRADDR), y
             beq  done
             jsr  putch
-            lda  CRX
+            jsr  getx
             bne  notFirstCol  ; If in first column
 pauseLoop   jsr  delay
             lda  pause

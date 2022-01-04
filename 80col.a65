@@ -65,8 +65,6 @@ CHRADDR     = $01             ; 16-bit character map address
 CHQUARTER   = $03             ; Quarter of character definition right to left
 CHHALFOFF   = $04             ; Half of character definition offset (half*8)
 CHDEFADDR   = $09             ; 16-bit character def address
-CRX         = $0B             ; Cursor x position on simulated screen
-CRY         = $0C             ; Cursor y position on simulated screen
 STRADDR     = $0D             ; 16-bit address of a string to print
 SFROM       = $0F             ; 16-bit scroll from address
 STO         = $12             ; 16-bit scroll to address
@@ -79,8 +77,8 @@ SHADADDR    = $1C             ; 16-bit shadow screen address
             ; Init 80/20 character screen
             ;--------------------------------
 init8020    lda  #00          ; Init cursor to top left of screen
-            sta  CRX          ; |
-            sta  CRY          ; /
+            sta  crx          ; |
+            sta  cry          ; /
             sta  inRedraw     ; Set as not in middle of redraw
             jmp  clrScrShad   ; Clear the shadow screen (RTS)
 
@@ -314,41 +312,41 @@ doneInc     lda  CHRADDR+1
 redraw      .(
             lda  #1           ; Set as in middle of redraw
             sta  inRedraw     ; /
-            lda  CRX          ; Push CRX and CRY to stack
+            lda  crx          ; Push crx and cry to stack
             pha               ; |
-            lda  CRY          ; |
+            lda  cry          ; |
             pha               ; /
             lda  #00
-            sta  CRX
-            sta  CRY
+            sta  crx
+            sta  cry
             lda  #<shadScr8020
             sta  SHADADDR
             lda  #>shadScr8020
             sta  SHADADDR+1
 loop        ldy  #00
             lda  (SHADADDR),y
-            ldx  CRX
-            ldy  CRY
+            ldx  crx
+            ldy  cry
             jsr  putchxy
             inc  SHADADDR               ; Increment SHADADDR
             bne  doneInc                ; |
             inc  SHADADDR+1             ; /
-doneInc     inc  CRX
-            ldx  CRX
+doneInc     inc  crx
+            ldx  crx
             cpx  #RNUMCOLSHD
             beq  newline
             bne  loop
 newline     ldx  #00
-            stx  CRX
-nextline    inc  CRY
-            ldy  CRY
+            stx  crx
+nextline    inc  cry
+            ldy  cry
             cpy  #RNUMROWSHD
             bne  loop
 
             pla
-            sta  CRY
+            sta  cry
             pla
-            sta  CRX
+            sta  crx
 
             lda  #0           ; Set as not in middle of redraw
             sta  inRedraw     ; /
@@ -422,7 +420,7 @@ wipeLoop    sta  (STO),y
             bne  wipeLoop
 
             lda  #(SNUMROW-2)      ; Set the cursor to one line up from bottom
-            sta  CRY
+            sta  cry
 
             rts
 .)
@@ -473,7 +471,7 @@ wipeLoop    sta  (STO),y
             bpl  wipeLoop
 
             lda  #(SNUMROW-1)      ; Set the cursor to the bottom line
-            sta  CRY
+            sta  cry
 
             rts
 .)
@@ -524,7 +522,7 @@ wipeLoop    sta  (STO),y
             bpl  wipeLoop
 
             lda  #(RNUMROWSHD-1)      ; Set the cursor to the bottom line
-            sta  CRY
+            sta  cry
 
             rts
 .)
@@ -552,47 +550,47 @@ putch       .(
 
             ; Print the character
             pha
-            lda  CRX
+            lda  crx
             tax
-            lda  CRY
+            lda  cry
             tay
             pla
             jsr  putchxy
 
             ; Move cursor
-            lda  CRX
+            lda  crx
             cmp  #SLSTCOL80
             bne  nextCol
 
             ; Move cursor to next line
 newline     lda  #0
-            sta  CRX
-            lda  CRY
+            sta  crx
+            lda  cry
             cmp  #(SNUMROW-1)
             beq  scroll       ; Scroll up if on last line
-            inc  CRY
+            inc  cry
             bne  done         ; Equivalant to JMP
 
 backspace   ; Move cursor back one character and delete character
-            ldx  CRX          ; If at beginning of line
+            ldx  crx          ; If at beginning of line
             beq  crup         ; /
-            dec  CRX
+            dec  crx
             jmp  blank
-crup        lda  CRY          ; If at top left of screen ignore key
+crup        lda  cry          ; If at top left of screen ignore key
             beq  done         ; /
             lda  #79          ; Move to end of previous line
-            sta  CRX
-            dec  CRY
+            sta  crx
+            dec  cry
 blank       lda  #SPACE       ; Blank out the character
-            ldx  CRX          ; |
-            ldy  CRY          ; |
+            ldx  crx          ; |
+            ldy  cry          ; |
             jsr  putchxy      ; |
             jmp  done         ; /
 
 scroll      jsr  scrollup
             jmp  done
 
-nextCol     inc  CRX
+nextCol     inc  crx
 done        rts
 .)
 
@@ -967,6 +965,14 @@ done        rts
 .)
 
 
+            ;----------------------------------------
+            ; getx
+            ; Returns X (column) value of cursor
+            ; in ACC
+            ;----------------------------------------
+getx        lda  crx
+            rts
+
 
             ; Convert ASCII to PETSCII
 asctocbm    .(
@@ -1009,6 +1015,8 @@ done        rts
 ;====================================
 
 mode8020    .byt MODE20       ; Whether in 80 or 20 colummn mode
+crx         .byt 0            ; Cursor x position on simulated screen
+cry         .byt 0            ; Cursor y position on simulated screen
 viewcolge   .byt 0            ; Viewable window for 20 columns - col >= val
 viewcollt   .byt 0            ; Viewable window for 20 columns - col < val
 
