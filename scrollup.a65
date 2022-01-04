@@ -1,11 +1,11 @@
-;=====================================================================
+;======================================================================
 ; Scroll messages up the screen
-;---------------------------------------------------------------------
+;----------------------------------------------------------------------
 ; Requires 8k+ memory
-;---------------------------------------------------------------------
-; Copyright (C) 2021 Lawrence Woodman <lwoodman@vlifesystems.com>
+;----------------------------------------------------------------------
+; Copyright (C) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
 ; Licensed under an MIT licence.  Please see LICENCE.md for details.
-;=====================================================================
+;======================================================================
 
 ; Locations in zero page
 FDX         = $CB             ; Matrix key coordinate of key press
@@ -27,7 +27,7 @@ KEYP        = 80              ; The P key
 
             * = $2000
             jmp  main
-#include "80col.a65"
+#include "display.a65"
 
 main        .(
             jsr  init8020

@@ -1,25 +1,24 @@
-;=====================================================================
+;======================================================================
 ; Print hello world to screen
-;---------------------------------------------------------------------
+;----------------------------------------------------------------------
 ; Requires 8k+ memory
-;---------------------------------------------------------------------
-; Copyright (C) 2021 Lawrence Woodman <lwoodman@vlifesystems.com>
+;----------------------------------------------------------------------
+; Copyright (C) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
 ; Licensed under an MIT licence.  Please see LICENCE.md for details.
-;=====================================================================
+;======================================================================
 
 
             .byt  $00, $20    ; Load address ($2000 / 8192)
 
             * = $2000
             jmp  main
-#include "80col.a65"
+#include "display.a65"
 
 main        jsr  init8020
             jsr  start80
-            lda  #10
-            sta  CRX
-            lda  #05
-            sta  CRY
+            ldx  #10          ; Set cursor X,Y to 10,5
+            ldy  #05          ; |
+            jsr  setxy        ; /
 
             lda  #<helloStr
             sta  STRADDR
@@ -34,10 +33,9 @@ main        jsr  init8020
             lda  #>helloStr
             sta  STRADDR+1
             jsr  puts
-            lda  #00
-            sta  CRX
-            lda  #11
-            sta  CRY
+            ldx  #00          ; Set cursor X,Y to 0,11
+            ldy  #11          ; |
+            jsr  setxy        ; /
             lda  #<helloStr
             sta  STRADDR
             lda  #>helloStr

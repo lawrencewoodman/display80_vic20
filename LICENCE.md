@@ -1,7 +1,7 @@
 The MIT Licence
 ===============
 
-Copyright (c) 2021 Lawrence Woodman <lwoodman@vlifesystems.com>
+Copyright (c) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

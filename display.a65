@@ -1,0 +1,231 @@
+;======================================================================
+; Print text using a 2x8 font on either an 80 column screen
+; or moving window 20 column screen
+;----------------------------------------------------------------------
+; Requires 8k+ memory
+; Note the zero page locations used and need
+; to provide a label shadScr8020 that will have room for
+; the shadow screen after it (80x22 bytes).
+;----------------------------------------------------------------------
+; Copyright (C) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
+; Licensed under an MIT licence.  Please see LICENCE.md for details.
+;======================================================================
+
+; Configuration
+SNUMCOL     = 80              ; Number of simulated text columns
+                              ; Must be divisible by 4
+SNUMROW     = 22              ; Number of simulated text rows
+                              ; Must be divisible by 2
+RVTVORIGIN  = 20              ; Vertical TV picture origin
+NL          = $0A             ; Newline character
+
+; ASCII characters
+SPACE       = 32              ; Space character
+BS          = 8               ; Backspace character
+
+; Colour constants
+CLBLACK     = 00
+CLBLUE      = 06
+
+; Mode constants
+MODE80      = 1               ; 80 column mode
+MODE20      = 0               ; 20 column mode
+
+; VIC Registers
+VICCR1      = $9001           ; Vertical TV picture origin
+VICCR2      = $9002           ; Number of columns, part of screen address
+VICCR3      = $9003           ; Number of rows, raster location, char size
+VICCR5      = $9005           ; Screen map and character map address
+
+; Display memory location constants
+CHRMAPBASE  = $1000           ; Base address of character map
+SCRBASE     = $1E00           ; Base address of screen
+COLMAPBASE  = $9600           ; Base address of colour map
+
+; Zero Page Variable Locations
+CHRADDR     = $01             ; 16-bit character map address
+                              ; used for calculations
+CHQUARTER   = $03             ; Quarter of character definition right to left
+CHHALFOFF   = $04             ; Half of character definition offset (half*8)
+CHDEFADDR   = $09             ; 16-bit character def address
+STRADDR     = $0D             ; 16-bit address of a string to print
+SFROM       = $0F             ; 16-bit scroll from address
+STO         = $12             ; 16-bit scroll to address
+CHDEF       = $14             ; 8 bytes defining a character
+SHADADDR    = $1C             ; 16-bit shadow screen address
+
+; TODO include display80 and display20
+
+
+            ;--------------------------------
+            ; init8020
+            ; Init 80/20 character screen
+            ;--------------------------------
+init8020    lda  #00          ; Init cursor to top left of screen
+            sta  crx          ; |
+            sta  cry          ; /
+            sta  inRedraw     ; Set as not in middle of redraw
+            jmp  clrScrShad   ; Clear the shadow screen (RTS)
+
+
+            ;------------------------------------------
+            ; scrollup
+            ; Scroll the screen up
+            ;------------------------------------------
+scrollup    .(
+            jsr  scrollupShad
+            lda  mode8020
+            cmp  #MODE80
+            beq  is80
+is20        jmp  scrollup20
+is80        jmp  scrollup80
+.)
+
+
+            ;------------------------------------------
+            ; putch
+            ; Print a character to screen at cursor
+            ; and move cursor
+            ; This will print NL, BS control characters
+            ; and ASCII 32-128 although these will be
+            ; folded into single case
+            ;------------------------------------------
+            ; ACC - character to print
+            ;------------------------------------------
+putch       .(
+            cmp  #NL
+            beq  newline      ; If newline character
+            cmp  #BS          ; If backspace character
+            beq  backspace
+
+            cmp  #SPACE       ; If acc<32 or acc>=129 then ignore
+            bcc  done         ; |
+            cmp  #129         ; |
+            bcs  done         ; /
+
+            ; Print the character
+            pha
+            lda  crx
+            tax
+            lda  cry
+            tay
+            pla
+            jsr  putchxy
+
+            ; Move cursor
+            lda  crx
+            cmp  #SLSTCOL80
+            bne  nextCol
+
+            ; Move cursor to next line
+newline     lda  #0
+            sta  crx
+            lda  cry
+            cmp  #(SNUMROW-1)
+            beq  scroll       ; Scroll up if on last line
+            inc  cry
+            bne  done         ; Equivalant to JMP
+
+backspace   ; Move cursor back one character and delete character
+            ldx  crx          ; If at beginning of line
+            beq  crup         ; /
+            dec  crx
+            jmp  blank
+crup        lda  cry          ; If at top left of screen ignore key
+            beq  done         ; /
+            lda  #79          ; Move to end of previous line
+            sta  crx
+            dec  cry
+blank       lda  #SPACE       ; Blank out the character
+            ldx  crx          ; |
+            ldy  cry          ; |
+            jsr  putchxy      ; |
+            jmp  done         ; /
+
+scroll      jsr  scrollup
+            jmp  done
+
+nextCol     inc  crx
+done        rts
+.)
+
+
+
+            ;-----------------------------------------
+            ; putchxy
+            ; Print a character to screen at position
+            ; specified on either the 80 columns or
+            ; 20 column screen
+            ;-----------------------------------------
+            ; ACC - character to print
+            ;   X - Column on simulated screen
+            ;   Y - Row on simulated screen
+            ;-----------------------------------------
+putchxy     .(
+            sta tmpAcc
+            txa               ; Push the X,Y parameters to the stack
+            pha               ; |
+            tya               ; |
+            pha               ; /
+            lda  tmpAcc
+            jsr  storexyShd   ; Store the character to the shadow screen
+            pla
+            tay
+            pla
+            tax
+            lda  mode8020
+            cmp  #MODE80
+            beq  is80
+is20        lda  tmpAcc
+            jmp  putchxy20         ; Will return from here
+is80        lda  tmpAcc
+            jmp  putchxy80         ; Will return from here
+.)
+
+
+            ;----------------------------------------
+            ; puts
+            ; Print string
+            ;----------------------------------------
+            ; STRADDR - Location of zero terminated
+            ;           string.  This location is
+            ;           left at end of string after
+            ;           function returns.
+            ;----------------------------------------
+puts        .(
+loop        ldy  #00
+            lda  (STRADDR), y
+            beq  done
+            jsr  putch
+            inc  STRADDR      ; Increment STRADDR
+            bne  incDone      ; |
+            inc  STRADDR+1    ; /
+incDone
+            jmp  loop
+done        rts
+.)
+
+
+            ;----------------------------------------
+            ; getx
+            ; Returns X (column) value of cursor
+            ; in ACC
+            ;----------------------------------------
+getx        lda  crx
+            rts
+
+
+            ;----------------------------------------
+            ; setxy
+            ; Set X and Y location of cursor
+            ;----------------------------------------
+            ; X - Column
+            ; Y - Row
+            ;----------------------------------------
+setxy       stx  crx
+            sty  cry
+            rts
+
+#include "display80.a65"
+#include "display20.a65"
+#include "displayshadow.a65"

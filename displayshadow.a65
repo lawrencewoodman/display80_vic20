@@ -1,0 +1,188 @@
+;======================================================================
+; Handle the shadow screen which contains the original
+; ASCII text in full
+;----------------------------------------------------------------------
+; Requires 8k+ memory
+; Note the zero page locations used and need
+; to provide a label shadScr8020 that will have room for
+; the shadow screen after it (80x22 bytes).
+; TODO check the above about shadow screen
+;----------------------------------------------------------------------
+; Copyright (C) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
+; Licensed under an MIT licence.  Please see LICENCE.md for details.
+;======================================================================
+
+; Dimensions for shadow screen
+RNUMCOLSHD  = 80
+RNUMROWSHD  = 22
+
+            ;-------------------------------------
+            ; clrScrShad
+            ; Clear the shadow screen
+            ;-------------------------------------
+clrScrShad  .(
+            lda  #<shadScr8020
+            sta  SHADADDR
+            lda  #>shadScr8020
+            sta  SHADADDR+1
+            ldy  #00
+loop        lda  #SPACE
+            sta  (SHADADDR),y
+            inc  SHADADDR               ; Increment SHADADDR
+            bne  doneInc                ; |
+            inc  SHADADDR+1             ; /
+doneInc     lda  SHADADDR+1             ; Test if at end of shadow screen
+            cmp  #>shadScr8020+(80*22)  ; |
+            bne  loop                   ; |
+            lda  SHADADDR               ; |
+            cmp  #<shadScr8020+(80*22)  ; |
+            bne  loop                   ; /
+            rts
+.)
+
+
+            ;------------------------------------------
+            ; redraw
+            ; Redraw the screen from the shadow screen
+            ;------------------------------------------
+redraw      .(
+            lda  #1           ; Set as in middle of redraw
+            sta  inRedraw     ; /
+            lda  crx          ; Push crx and cry to stack
+            pha               ; |
+            lda  cry          ; |
+            pha               ; /
+            lda  #00
+            sta  crx
+            sta  cry
+            lda  #<shadScr8020
+            sta  SHADADDR
+            lda  #>shadScr8020
+            sta  SHADADDR+1
+loop        ldy  #00
+            lda  (SHADADDR),y
+            ldx  crx
+            ldy  cry
+            jsr  putchxy
+            inc  SHADADDR               ; Increment SHADADDR
+            bne  doneInc                ; |
+            inc  SHADADDR+1             ; /
+doneInc     inc  crx
+            ldx  crx
+            cpx  #RNUMCOLSHD
+            beq  newline
+            bne  loop
+newline     ldx  #00
+            stx  crx
+nextline    inc  cry
+            ldy  cry
+            cpy  #RNUMROWSHD
+            bne  loop
+
+            pla
+            sta  cry
+            pla
+            sta  crx
+
+            lda  #0           ; Set as not in middle of redraw
+            sta  inRedraw     ; /
+            rts
+.)
+
+
+            ; TODO change to putchxyShd?
+            ;-----------------------------------------
+            ; storexyShd
+            ; Store a character in the shadow screen
+            ;-----------------------------------------
+            ; ACC - character to print (ASCII)
+            ;   X - Column on simulated screen
+            ;   Y - Row on simulated screen
+            ;-----------------------------------------
+storexyShd  .(
+            ; Add column to shadScr8020 (shadow screen)
+            pha               ; Push character to stack
+            lda  inRedraw     ; If in redraw then return
+            beq  findCol      ; |
+            pla               ; |
+            rts               ; /
+
+findCol     clc
+            txa
+            adc  #<shadScr8020  ; lsb
+            sta  SHADADDR       ; lsb
+            lda  #00
+            adc  #>shadScr8020  ; msb
+            sta  SHADADDR+1     ; msb
+
+
+            ; Find location of row
+findRow     cpy  #00
+            beq  storeCh
+            ; Add number of columns (80) to address
+            clc
+            lda  SHADADDR     ; lsb
+            adc  #80
+            sta  SHADADDR     ; lsb
+            bcc  noCarry
+            inc  SHADADDR+1   ; msb
+noCarry     dey
+            jmp  findRow
+
+
+storeCh     pla
+            ldy  #00
+            sta  (SHADADDR), y
+done        rts
+.)
+
+
+            ;-----------------------------------------
+            ; scrollupShad
+            ; Scroll shadow screen up one line
+            ;-----------------------------------------
+scrollupShad .(
+            lda  #<(shadScr8020+RNUMCOLSHD)   ; Set copy start locations
+            sta  SFROM                        ; |
+            lda  #>(shadScr8020+RNUMCOLSHD)   ; |
+            sta  SFROM+1                      ; |
+            lda  #<shadScr8020                ; |
+            sta  STO                          ; |
+            lda  #>shadScr8020                ; |
+            sta  STO+1                        ; /
+
+            ldy  #0
+            ldx  #>(RNUMCOLSHD*(RNUMROWSHD-1))  ; Number of pages to move
+            beq  partPage
+pageLoop    lda  (SFROM),y                    ; Copy a page
+            sta  (STO),y                      ; |
+            iny                               ; |
+            bne  pageLoop                     ; /
+            inc  SFROM+1                      ; Next page
+            inc  STO+1                        ; /
+            dex
+            bne  pageLoop
+partPage    ldx  #<(RNUMCOLSHD*(RNUMROWSHD-1))   ; Remainder of last page
+            beq  wipe
+partLoop    lda  (SFROM),y                   ; Copy remainder
+            sta  (STO),y                     ; |
+            iny                              ; |
+            dex                              ; |
+            bne  partLoop                    ; /
+
+            ; Wipe last line
+wipe        lda  #<(shadScr8020+(RNUMCOLSHD*(RNUMROWSHD-1)))  ; lsb
+            sta  STO
+            lda  #>(shadScr8020+(RNUMCOLSHD*(RNUMROWSHD-1)))  ; msb
+            sta  STO+1
+            ldy  #RNUMCOLSHD     ; Wipe a line of characters
+            lda  #SPACE          ; Use a space to wipe the lines
+wipeLoop    sta  (STO),y
+            dey
+            bpl  wipeLoop
+
+            lda  #(RNUMROWSHD-1)      ; Set the cursor to the bottom line
+            sta  cry
+
+            rts
+.)

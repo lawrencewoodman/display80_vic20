@@ -1,18 +1,18 @@
-;=====================================================================
+;======================================================================
 ; Print character set to screen
-;---------------------------------------------------------------------
+;----------------------------------------------------------------------
 ; Requires 8k+ memory
-;---------------------------------------------------------------------
-; Copyright (C) 2021 Lawrence Woodman <lwoodman@vlifesystems.com>
+;----------------------------------------------------------------------
+; Copyright (C) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
 ; Licensed under an MIT licence.  Please see LICENCE.md for details.
-;=====================================================================
+;======================================================================
 
 
             .byt  $00, $20    ; Load address ($2000 / 8192)
 
             * = $2000
             jmp  main
-#include "80col.a65"
+#include "display.a65"
 
 main        jsr  init8020
             jsr  start80
@@ -43,10 +43,9 @@ main        jsr  init8020
             jsr  putchxy
 
 
-            lda  #10
-            sta  CRX
-            lda  #06
-            sta  CRY
+            ldx  #10          ; Set cursor X,Y to 10,6
+            ldy  #06          ; |
+            jsr  setxy        ; /
             jsr  printChSet
 
 

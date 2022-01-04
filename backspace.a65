@@ -1,11 +1,11 @@
-;=====================================================================
+;======================================================================
 ; Tests backspace works properly
-;---------------------------------------------------------------------
+;----------------------------------------------------------------------
 ; Requires 8k+ memory
-;---------------------------------------------------------------------
-; Copyright (C) 2021 Lawrence Woodman <lwoodman@vlifesystems.com>
+;----------------------------------------------------------------------
+; Copyright (C) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
 ; Licensed under an MIT licence.  Please see LICENCE.md for details.
-;=====================================================================
+;======================================================================
 
 FDX         = $CB             ; Matrix key coordinate of key press
 
@@ -13,15 +13,15 @@ FDX         = $CB             ; Matrix key coordinate of key press
 
             * = $2000
             jmp  main
-#include "80col.a65"
+#include "display.a65"
 
 main        .(
             jsr  init8020
             jsr  start80
 
-forever     lda  #0
-            sta  CRX
-            sta  CRY
+forever     ldx  #00          ; Set cursor X,Y to 0,0
+            ldy  #00          ; |
+            jsr  setxy        ; /
 
             lda  #<msgA
             sta  STRADDR
@@ -44,10 +44,9 @@ forever     lda  #0
             jsr  delStr
             jsr  delay
 
-            lda  #60
-            sta  CRX
-            lda  #1
-            sta  CRY
+            ldx  #60          ; Set cursor X,Y to 60,1
+            ldy  #01          ; |
+            jsr  setxy        ; /
             lda  #<msgB
             sta  STRADDR
             lda  #>msgB
