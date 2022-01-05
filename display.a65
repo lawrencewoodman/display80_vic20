@@ -168,7 +168,7 @@ putchxy     .(
             tya               ; |
             pha               ; /
             lda  tmpAcc
-            jsr  storexyShd   ; Store the character to the shadow screen
+            jsr  putchxyShd   ; Store the character to the shadow screen
             pla
             tay
             pla

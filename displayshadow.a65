@@ -86,16 +86,15 @@ nextline    inc  cry
 .)
 
 
-            ; TODO change to putchxyShd?
             ;-----------------------------------------
-            ; storexyShd
+            ; putchxyShd
             ; Store a character in the shadow screen
             ;-----------------------------------------
             ; ACC - character to print (ASCII)
             ;   X - Column on simulated screen
             ;   Y - Row on simulated screen
             ;-----------------------------------------
-storexyShd  .(
+putchxyShd  .(
             ; Add column to shadScr8020 (shadow screen)
             pha               ; Push character to stack
             lda  inRedraw     ; If in redraw then return
