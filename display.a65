@@ -6,6 +6,7 @@
 ; Note the zero page locations used and need
 ; to provide a label shadScr8020 that will have room for
 ; the shadow screen after it (80x22 bytes).
+; TODO rename shadScr8020
 ;----------------------------------------------------------------------
 ; Copyright (C) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
 ; Licensed under an MIT licence.  Please see LICENCE.md for details.
@@ -54,7 +55,6 @@ STO         = $12             ; 16-bit scroll to address
 CHDEF       = $14             ; 8 bytes defining a character
 SHADADDR    = $1C             ; 16-bit shadow screen address
 
-; TODO include display80 and display20
 
 
             ;--------------------------------

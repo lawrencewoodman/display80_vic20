@@ -1,10 +1,7 @@
 ;======================================================================
 ; Print text using a 2x8 font on an 80 column screen
 ;----------------------------------------------------------------------
-; Requires 8k+ memory
-; Note the zero page locations used and need
-; to provide a label shadScr8020 that will have room for
-; the shadow screen after it (80x22 bytes).
+; Included by display.a65, see that file for more details
 ;----------------------------------------------------------------------
 ; Copyright (C) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
 ; Licensed under an MIT licence.  Please see LICENCE.md for details.

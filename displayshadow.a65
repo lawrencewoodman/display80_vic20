@@ -2,11 +2,7 @@
 ; Handle the shadow screen which contains the original
 ; ASCII text in full
 ;----------------------------------------------------------------------
-; Requires 8k+ memory
-; Note the zero page locations used and need
-; to provide a label shadScr8020 that will have room for
-; the shadow screen after it (80x22 bytes).
-; TODO check the above about shadow screen
+; Included by display.a65, see that file for more details
 ;----------------------------------------------------------------------
 ; Copyright (C) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
 ; Licensed under an MIT licence.  Please see LICENCE.md for details.
