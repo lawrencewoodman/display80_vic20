@@ -166,16 +166,26 @@ wipeLoop    sta  (STO),y
             ; putchxy80
             ; Print a character to screen at position
             ; specified on 80 column screen
-            ; This will print ASCII 32-95
+            ; This will print ASCII 32-127
             ;-----------------------------------------
             ; ACC - character to print (ASCII)
             ;   X - Column on simulated screen
             ;   Y - Row on simulated screen
             ;-----------------------------------------
 putchxy80   .(
-            cmp  #95
-            bcc  storeCh      ; If <= 95
+            cmp  #97
+            bcc  storeCh      ; If <= 96
+            cmp  #127
+            bcs  ge127
+            cmp  #123
+            bcs  ge123lt127
             and  #$5F         ; Drop bit 5 (upcase)
+            jmp  storeCh
+
+ge123lt127  sec
+            sbc  #26
+            jmp  storeCh
+ge127       lda  #32          ; Space
 storeCh     pha               ; Push character to stack
             lda  #$00         ; Zero CHRADDR
             sta  CHRADDR      ; |

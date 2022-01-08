@@ -233,7 +233,6 @@ done        rts
 .)
 
 
-            ; TODO fix this so it handles case properly
             ;-----------------------------------------
             ; asctocbm
             ; Convert ASCII to PETSCII
@@ -241,37 +240,66 @@ done        rts
             ; ACC - character to convert
             ;-----------------------------------------
 asctocbm    .(
-            cmp  #32
-            bcs  ge32
-            cmp  #13          ; If acc==13, return
-            beq  done
-            cmp  #8
-            beq  isDel
-            jmp  zero
-ge32        cmp  #65          ; If acc>=32 and acc<=64, return
-            bcc  done
+            cmp  #33          ; If acc<=32 then acc=space, return
+            bcc  blank        ; /
+            cmp  #127         ; If acc>=127 then acc=space, return
+            bcs  blank        ; /
+            cmp  #64          ; If acc>=33 and acc<=63, return
+            bcc  done         ; /
+            cmp  #64
+            beq  is64
             cmp  #91
-            bcs  ge91
-            ; If acc>=65 and acc<=90 then acc=acc+128, return
-            clc
-            adc  #128
-            jmp  done
-ge91        cmp  #96          ; If acc>=91 and acc <=95, return
-            bcc  done
-            cmp  #97          ; If acc >= 97
-            bcs  ge97
-            ; If acc==96 or acc>=123 or (acc<32 and acc!=8 and acc!=13)
-zero        lda  #00
-            jmp  done
-ge97        cmp  #123
-            bcs  zero
-            ; If acc>=97 and acc<=122 then acc=acc-32, return
-            sec
-            sbc  #32
-            jmp  done
-            ; If acc==8 then acc=20, return
-isDel       clc
-            lda  #20
+            beq  is91
+            cmp  #92
+            beq  is92
+            cmp  #93
+            beq  is93
+            cmp  #94
+            beq  is94
+            cmp  #95
+            beq  is95
+            cmp  #96
+            beq  is96
+            cmp  #123
+            beq  is123
+            cmp  #124
+            beq  is124
+            cmp  #125
+            beq  is125
+            cmp  #126
+            beq  is126
+            cmp  #97          ; If acc>=97
+            bcs  ge97         ; /
+            jmp  done         ; If acc>=65 and acc<=90, return
+
+            ; Series of individual characters to convert
+is64        lda  #00          ; At symbol
+            beq  done
+is91        lda  #27          ; Left square bracket
+            bne  done
+is92        lda  #127         ; Backslash
+            bne  done
+is93        lda  #29          ; Right square bracket
+            bne  done
+is94        lda  #30          ; Caret / up arrow (Approx)
+            bne  done
+is95        lda  #100         ; Underscore
+            bne  done
+is96        lda  #39          ; Apostrophe
+            bne  done
+is123       lda  #117         ; Left brace (approx)
+            bne  done
+is124       lda  #93          ; Vertical bar
+            bne  done
+is125       lda  #118         ; Right brace (approx)
+            bne  done
+is126       lda  #64          ; Tilde (approx)
+            bne  done
+blank       lda  #32          ; Space used as a blank character
+            bne  done
+
+ge97        sec               ; If acc>=97 and acc<=122 then acc=acc-96
+            sbc  #96          ; /
 done        rts
 .)
 

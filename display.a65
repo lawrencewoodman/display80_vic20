@@ -87,8 +87,7 @@ is80        jmp  scrollup80
             ; Print a character to screen at cursor
             ; and move cursor
             ; This will print NL, BS control characters
-            ; and ASCII 32-128 although these will be
-            ; folded into single case
+            ; and ASCII 32-127
             ;------------------------------------------
             ; ACC - character to print
             ;------------------------------------------
