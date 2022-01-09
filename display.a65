@@ -228,3 +228,15 @@ setxy       stx  crx
 #include "display80.a65"
 #include "display20.a65"
 #include "displayshadow.a65"
+#include "fontdef.a65"        ; The font definitions
+
+
+;====================================
+; Data
+;====================================
+mode8020    .byt MODE20       ; Whether in 80 or 20 colummn mode
+crx         .byt 0            ; Cursor x position on simulated screen
+cry         .byt 0            ; Cursor y position on simulated screen
+inRedraw    .byt 0            ; In middle of redraw operation
+tmpAcc      .byt 0            ; Temporary location to store ACC if stack
+                              ; not convenient

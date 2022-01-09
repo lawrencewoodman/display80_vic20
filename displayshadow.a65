@@ -41,6 +41,8 @@ doneInc     lda  SHADADDR+1             ; Test if at end of shadow screen
             ; redraw
             ; Redraw the screen from the shadow screen
             ;------------------------------------------
+            ; TODO check if need redraw might be able to just repoint
+            ; screen and character set in some situations
 redraw      .(
             lda  #1           ; Set as in middle of redraw
             sta  inRedraw     ; /

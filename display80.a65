@@ -349,7 +349,7 @@ q3          lda  (CHRADDR),y
             sta  (CHRADDR),y
             dey
             bpl  q3
-            jmp  done
+            bmi  done
 
 q2          lda  (CHRADDR),y
             and  #$CF
@@ -357,7 +357,7 @@ q2          lda  (CHRADDR),y
             sta  (CHRADDR),y
             dey
             bpl  q2
-            jmp  done
+            bmi  done
 
 q1          lda  (CHRADDR),y
             and  #$F3
@@ -365,7 +365,7 @@ q1          lda  (CHRADDR),y
             sta  (CHRADDR),y
             dey
             bpl  q1
-            jmp  done
+            bmi  done
 
 q0          lda  (CHRADDR),y
             and  #$FC
@@ -376,18 +376,3 @@ q0          lda  (CHRADDR),y
 
 done        rts
 .)
-
-
-
-;====================================
-; Data
-;====================================
-mode8020    .byt MODE20       ; Whether in 80 or 20 colummn mode
-crx         .byt 0            ; Cursor x position on simulated screen
-cry         .byt 0            ; Cursor y position on simulated screen
-
-tmpAcc      .byt 0            ; Temporary location to store ACC if stack
-                              ; not convenient
-inRedraw    .byt 0            ; In middle of redraw operation
-
-#include "fontdef.a65"        ; The font definitions
