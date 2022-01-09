@@ -134,11 +134,11 @@ pause       .byt 0
 ; TODO different modes
 msg         .aasc "80 columns on the Commodore VIC-20!",NL
             .aasc NL
-            .aasc "Supports Newline (software definable) and ASCII 32-95.  "
-            .aasc "The fonts are 2*8.  "
-            .aasc "The characters use height and descenders to help "
-            .aasc "differentiate the characters.  The numbers are taller for "
-            .aasc "the same reason.",NL
+            .aasc "Supports Newline (software definable), Backspace and "
+            .aasc "ASCII 32-127 with case folded into a single case.  "
+            .aasc "The fonts are 2*8 and  use height and descenders "
+            .aasc "to help differentiate the characters.  "
+            .aasc "The numbers are taller for the same reason.",NL
             .aasc NL
             .aasc "The standard text mode is 80*12", NL
             .aasc NL
