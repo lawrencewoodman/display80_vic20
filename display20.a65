@@ -105,16 +105,16 @@ loop        sta  COLMAPBASE, y
             ;-------------------------------------
 clrScr20    .(
             lda  #00
-            sta  CHRADDR          ; TODO Change CHRADDR to SCRADDR?
+            sta  SCRADDR
             lda  #>SCRBASE
-            sta  CHRADDR+1
+            sta  SCRADDR+1
             ldy  #00
 loop        lda  #SPACE
-            sta  (CHRADDR),y      ; Set character map location
-            inc  CHRADDR          ; Increment CHRADDR
+            sta  (SCRADDR),y      ; Set character map location
+            inc  SCRADDR          ; Increment SCRADDR
             bne  doneInc          ; |
-            inc  CHRADDR+1        ; /
-doneInc     lda  CHRADDR+1
+            inc  SCRADDR+1        ; /
+doneInc     lda  SCRADDR+1
             cmp  #>$2000          ; TODO Replace with constant
             bne  loop
             rts
@@ -184,8 +184,6 @@ wipeLoop    sta  (STO),y
             ;   Y - Row on simulated screen
             ;-----------------------------------------
 putchxy20   .(
-            ; TODO use different location than CHRADDR, maybe SCRADDR
-
             ; See if in visible quarter of screen
             cpx  viewcolge
             bcs  ge
@@ -203,9 +201,9 @@ inView      ; The location is in view
 
             ; Find column
 findCol     txa
-            sta  CHRADDR      ; Store column to CHRADDR  - lsb
+            sta  SCRADDR      ; Store column to SCRADDR  - lsb
             lda  #$00         ; |
-            sta  CHRADDR+1    ; /   msb
+            sta  SCRADDR+1    ; /   msb
 
 
             ; Find location of row
@@ -213,24 +211,24 @@ findRow     cpy  #00
             beq  addScrAddr
             ; Add number of real columns to address
             clc
-            lda  CHRADDR      ; lsb
+            lda  SCRADDR      ; lsb
             adc  #RNUMCOL20
-            sta  CHRADDR      ; lsb
+            sta  SCRADDR      ; lsb
             bcc  noCarry
-            inc  CHRADDR+1    ; msb
+            inc  SCRADDR+1    ; msb
 noCarry     dey
             jmp  findRow
 
             ; Add $1E00 as address of screen
 addScrAddr  clc
-            lda  CHRADDR+1    ; msb
+            lda  SCRADDR+1    ; msb
             adc  #>SCRBASE
-            sta  CHRADDR+1    ; msb
+            sta  SCRADDR+1    ; msb
 
 storeCh     pla
             jsr  asctocbm
             ldy  #00
-            sta  (CHRADDR), y
+            sta  (SCRADDR), y
 done        rts
 .)
 

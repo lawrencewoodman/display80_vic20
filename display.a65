@@ -44,16 +44,14 @@ SCRBASE     = $1E00           ; Base address of screen
 COLMAPBASE  = $9600           ; Base address of colour map
 
 ; Zero Page Variable Locations
-CHRADDR     = $01             ; 16-bit character map address
-                              ; used for calculations
-CHQUARTER   = $03             ; Quarter of character definition right to left
-CHHALFOFF   = $04             ; Half of character definition offset (half*8)
-CHDEFADDR   = $09             ; 16-bit character def address
-STRADDR     = $0D             ; 16-bit address of a string to print
-SFROM       = $0F             ; 16-bit scroll from address
-STO         = $12             ; 16-bit scroll to address
+CHRADDR     = $01             ; 16-bit character map address (calculations)
+SCRADDR     = $03             ; 16-bit screen address (calculations)
+CHDEFADDR   = $05             ; 16-bit character def address (calculations)
+SHADADDR    = $07             ; 16-bit shadow screen address (calculations)
+STRADDR     = $0B             ; 16-bit address of a string to print
+SFROM       = $0D             ; 16-bit scroll from address
+STO         = $0F             ; 16-bit scroll to address
 CHDEF       = $14             ; 8 bytes defining a character
-SHADADDR    = $1C             ; 16-bit shadow screen address
 
 
 

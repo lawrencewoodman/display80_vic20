@@ -196,11 +196,11 @@ storeCh     pha               ; Push character to stack
             ; TODO tidy this up
             txa
             and  #3           ; Look at right 2 bits
-            sta  CHQUARTER
+            sta  chquarter
             lda  #3
             sec
-            sbc  CHQUARTER
-            sta  CHQUARTER
+            sbc  chquarter
+            sta  chquarter
 
             ; Find which half of a character definition
             ; and store the offset
@@ -210,7 +210,7 @@ storeCh     pha               ; Push character to stack
             asl               ; Multiply by 8
             asl               ; |
             asl               ; /
-            sta  CHHALFOFF
+            sta  chhalfoff
 
             ; TODO Put this where zero CHRADDR is above
             ; Find location of simulated column pair
@@ -253,12 +253,12 @@ mul16        ; TODO find better name
             adc  #>CHRMAPBASE
             sta  CHRADDR+1    ; msb
 
-            ; Add CHHALFOFF offset to character map address
+            ; Add chhalfoff offset to character map address
             ; This locates in the top or bottom half of the character
             ; definition
             clc
             lda  CHRADDR
-            adc  CHHALFOFF
+            adc  chhalfoff
             sta  CHRADDR
 
             ; Copy the character to the screen
@@ -311,7 +311,7 @@ alignDoneR
             ora  CHDEF, x
 
             ; Put character in correct quarter
-            ldy  CHQUARTER
+            ldy  chquarter
 realignQ    beq  alignDoneQ
             asl
             asl
@@ -334,7 +334,7 @@ alignDoneQ
             ; where this character will go and ORs the remaining
             ; bits with the new character.
             ldy  #7
-            lda  CHQUARTER
+            lda  chquarter
             cmp  #00
             beq  q0
             cmp  #01
@@ -375,3 +375,9 @@ q0          lda  (CHRADDR),y
 
 done        rts
 .)
+
+;====================================
+; Data
+;====================================
+chquarter   .byt 0            ; Quarter of character definition right to left
+chhalfoff   .byt 0            ; Half of character definition offset (half*8)
