@@ -123,20 +123,21 @@ doneInc     lda  CHRADDR+1
 
             ;-----------------------------------------
             ; scrollup20
-            ; Scroll 20 column screen up one line
+            ; Scroll 20 column screen up two lines
+            ; NOTE two lines to match scrollup80
             ;-----------------------------------------
 scrollup20  .(
-            lda  #<(SCRBASE+RNUMCOL20)  ; Set copy start locations
-            sta  SFROM                  ; |
-            lda  #>(SCRBASE+RNUMCOL20)  ; |
-            sta  SFROM+1                ; |
-            lda  #<SCRBASE              ; |
-            sta  STO                    ; |
-            lda  #>SCRBASE              ; |
-            sta  STO+1                  ; /
+            lda  #<(SCRBASE+(2*RNUMCOL20))  ; Set copy start locations
+            sta  SFROM                      ; |
+            lda  #>(SCRBASE+(2*RNUMCOL20))  ; |
+            sta  SFROM+1                    ; |
+            lda  #<SCRBASE                  ; |
+            sta  STO                        ; |
+            lda  #>SCRBASE                  ; |
+            sta  STO+1                      ; /
 
             ldy  #0
-            ldx  #>(RNUMCOL20*(RNUMROW20-1))  ; msb size of move
+            ldx  #>(RNUMCOL20*(RNUMROW20-2))  ; msb size of move
             beq  partPage
 pageLoop    lda  (SFROM),y                    ; Copy a page
             sta  (STO),y                      ; |
@@ -146,7 +147,7 @@ pageLoop    lda  (SFROM),y                    ; Copy a page
             inc  STO+1                        ; /
             dex
             bne  pageLoop
-partPage    ldx  #<(RNUMCOL20*(RNUMROW20-1))
+partPage    ldx  #<(RNUMCOL20*(RNUMROW20-2))
             beq  wipe
 partLoop    lda  (SFROM),y                   ; Copy remainder
             sta  (STO),y                     ; |
@@ -155,17 +156,17 @@ partLoop    lda  (SFROM),y                   ; Copy remainder
             bne  partLoop                    ; /
 
             ; Wipe last line
-wipe        lda  #<(SCRBASE+(RNUMCOL20*(RNUMROW20-1)))
+wipe        lda  #<(SCRBASE+(RNUMCOL20*(RNUMROW20-2)))
             sta  STO
-            lda  #>(SCRBASE+(RNUMCOL20*(RNUMROW20-1)))
+            lda  #>(SCRBASE+(RNUMCOL20*(RNUMROW20-2)))
             sta  STO+1
-            ldy  #RNUMCOL20      ; Wipe a line of characters
+            ldy  #(2*RNUMCOL20)  ; Wipe two lines of characters
             lda  #SPACE          ; Use a space to wipe the lines
 wipeLoop    sta  (STO),y
             dey
             bpl  wipeLoop
 
-            lda  #(SNUMROW-1)      ; Set the cursor to the bottom line
+            lda  #(SNUMROW-2)      ; Set the cursor to the bottom line
             sta  cry
 
             rts
