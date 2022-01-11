@@ -130,17 +130,18 @@ done        rts
 pause       .byt 0
 
 
-; TODO update text to better reflect 80/20 modes and how ASCII works in the
-; TODO different modes
 msg         .aasc "80 columns on the Commodore VIC-20!",NL
             .aasc NL
             .aasc "Supports Newline (software definable), Backspace and "
             .aasc "ASCII 32-127 with case folded into a single case.  "
-            .aasc "The fonts are 2*8 and  use height and descenders "
+            .aasc "The fonts are 2*8 and uses height and descenders "
             .aasc "to help differentiate the characters.  "
             .aasc "The numbers are taller for the same reason.",NL
             .aasc NL
-            .aasc "The standard text mode is 80*12", NL
+            .aasc "The standard text mode is 80*22 with the ability to "
+            .aasc "switch to 20 column mode which views the 80 column "
+            .aasc "screen through a movable window using the "
+            .aasc "standard 8*8 font.",NL
             .aasc NL
             .aasc "The alphabet:",NL
             .aasc "  a b c d e f g h i j k l m n o p q r s t u v w x y z",NL

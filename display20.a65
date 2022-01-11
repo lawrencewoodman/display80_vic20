@@ -101,7 +101,7 @@ loop        sta  COLMAPBASE, y
 
             ;-------------------------------------
             ; clrScr20
-            ; Clear the screen 20 column screen
+            ; Clear the 20 column screen
             ;-------------------------------------
 clrScr20    .(
             lda  #00
