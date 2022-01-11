@@ -50,31 +50,36 @@ redraw      .(
             pha               ; |
             lda  cry          ; |
             pha               ; /
-            lda  #00
+            lda  #(RNUMCOLSHD-1)
             sta  crx
+            lda  #00
             sta  cry
             lda  #<shadScr8020
             sta  SHADADDR
             lda  #>shadScr8020
             sta  SHADADDR+1
-loop        ldy  #00
-            lda  (SHADADDR),y
-            ldx  crx
-            ldy  cry
-            jsr  putchxy
-            inc  SHADADDR               ; Increment SHADADDR
-            bne  doneInc                ; |
-            inc  SHADADDR+1             ; /
-doneInc     inc  crx
-            ldx  crx
-            cpx  #RNUMCOLSHD
-            beq  newline
-            bne  loop
-newline     ldx  #00
-            stx  crx
-nextline    inc  cry
-            ldy  cry
-            cpy  #RNUMROWSHD
+
+loop        ldy  crx             ; Copy a line of text to the screen
+            lda  (SHADADDR),y    ; |  y here contains column (crx)
+            ldx  crx             ; |
+            ldy  cry             ; |
+            jsr  putchxy         ; |
+            dec  crx             ; |
+            bpl  loop            ; /
+
+            lda  #(RNUMCOLSHD-1) ; Move crx back to end of line
+            sta  crx             ; /
+
+            clc                  ; Increment SHADADDR by RNUMCOLSHD
+            lda  SHADADDR        ; |  lsb
+            adc  #RNUMCOLSHD     ; |
+            sta  SHADADDR        ; |
+            bcc  nextLine        ; |
+            inc  SHADADDR+1      ; /  msb
+
+nextLine    inc  cry
+            lda  cry
+            cmp  #RNUMROWSHD
             bne  loop
 
             pla
@@ -112,20 +117,18 @@ findCol     clc
             adc  #>shadScr8020  ; msb
             sta  SHADADDR+1     ; msb
 
-
             ; Find location of row
 findRow     cpy  #00
             beq  storeCh
-            ; Add number of columns (80) to address
-            clc
-            lda  SHADADDR     ; lsb
-            adc  #80
-            sta  SHADADDR     ; lsb
-            bcc  noCarry
-            inc  SHADADDR+1   ; msb
+
+            clc               ; Add number of columns to address
+            lda  SHADADDR     ; |  lsb
+            adc  #RNUMCOLSHD  ; |
+            sta  SHADADDR     ; |  lsb
+            bcc  noCarry      ; |
+            inc  SHADADDR+1   ; /  msb
 noCarry     dey
             jmp  findRow
-
 
 storeCh     pla
             ldy  #00
@@ -160,6 +163,7 @@ pageLoop    lda  (SFROM),y                    ; Copy a page
             inc  STO+1                        ; /
             dex
             bne  pageLoop
+            ; y would always be 0 at this point
 partPage    ldx  #<(RNUMCOLSHD*(RNUMROWSHD-2))   ; Remainder of last page
             beq  wipe
 partLoop    lda  (SFROM),y                   ; Copy remainder
@@ -177,7 +181,8 @@ wipe        lda  #<(shadScr8020+(RNUMCOLSHD*(RNUMROWSHD-2)))  ; lsb
             lda  #SPACE            ; Use a space to wipe the lines
 wipeLoop    sta  (STO),y
             dey
-            bpl  wipeLoop
+            cpy  #$FF
+            bne  wipeLoop
 
             rts
 .)
