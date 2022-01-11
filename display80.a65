@@ -69,7 +69,6 @@ next        iny
             ; initScr80
             ; Fill screen map with characters needed
             ;-----------------------------------------------
-            ; TODO improve this loop code
 initScr80   .(
             ldy  #(RNUMCOL80*RNUMROW80)
 loop        tya
