@@ -17,7 +17,7 @@ SNUMCOL     = 80              ; Number of simulated text columns
                               ; Must be divisible by 4
 SNUMROW     = 22              ; Number of simulated text rows
                               ; Must be divisible by 2
-RVTVORIGIN  = 20              ; Vertical TV picture origin
+RVTVORIGIN  = 40              ; Vertical TV picture origin
 NL          = $0A             ; Newline character
 
 ; ASCII characters
