@@ -29,7 +29,7 @@ main        jsr  init8020
             jsr  puts
 
             ldx  #00          ; Set cursor X,Y to 0,6
-            ldy  #06          ; |
+            ldy  #04          ; |
             jsr  setxy        ; /
 
             lda  #<asciiBlk
@@ -45,14 +45,14 @@ forever     jmp  forever
 titleMsg    .aasc "The 80 column character set (ASCII 33-126)",0
 
             ; String representing ASCII as a block
-asciiBlk    .aasc "                           ! ", 34, " # $ % & ' ( ) * + , -",NL
-            .aasc "                           . / 0 1 2 3 4 5 6 7 8 9",NL
-            .aasc "                           : ; < = > ? @",NL
-            .aasc "                           A B C D E F G H I J K L M",NL
-            .aasc "                           N O P Q R S T U V W X Y Z",NL
-            .aasc "                           [ \ ] ^ _ `",NL
-            .aasc "                           a b c d e f g h i j k l m",NL
-            .aasc "                           n o p q r s t u v w x y z",NL
-            .aasc "                           { ", 124, " } ~",NL,0
+asciiBlk    .aasc "                           ! ", 34, " # $ % & ' ( ) * + , -",NL,NL
+            .aasc "                           . / 0 1 2 3 4 5 6 7 8 9",NL,NL
+            .aasc "                           : ; < = > ? @",NL,NL
+            .aasc "                           A B C D E F G H I J K L M",NL,NL
+            .aasc "                           N O P Q R S T U V W X Y Z",NL,NL
+            .aasc "                           [ \ ] ^ _ `",NL,NL
+            .aasc "                           a b c d e f g h i j k l m",NL,NL
+            .aasc "                           n o p q r s t u v w x y z",NL,NL
+            .aasc "                           { ", 124, " } ~",0
 
 shadScr8020 ; The shadow screen with room for 80x22 bytes
