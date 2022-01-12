@@ -23,6 +23,7 @@ NL          = $0A             ; Newline character
 ; ASCII characters
 SPACE       = 32              ; Space character
 BS          = 8               ; Backspace character
+TAB         = 9               ; Tab character
 
 ; Colour constants
 CLBLACK     = 00
@@ -85,19 +86,21 @@ is80        jmp  scrollup80
             ; Print a character to screen at cursor
             ; and move cursor
             ; This will print NL, BS control characters
-            ; and ASCII 32-127
+            ; and ASCII 32-126
             ;------------------------------------------
             ; ACC - character to print
             ;------------------------------------------
 putch       .(
-            cmp  #NL
-            beq  newline      ; If newline character
+            cmp  #NL          ; If newline character
+            beq  newline
             cmp  #BS          ; If backspace character
             beq  backspace
+            cmp  #TAB         ; If tab character
+            beq  tab
 
-            cmp  #SPACE       ; If acc<32 or acc>=129 then ignore
+            cmp  #SPACE       ; If acc<32 or acc>=127 then ignore
             bcc  done         ; |
-            cmp  #129         ; |
+            cmp  #127         ; |
             bcs  done         ; /
 
             ; Print the character
@@ -122,6 +125,25 @@ newline     lda  #0
             beq  scroll       ; Scroll up if on last line
             inc  cry
             bne  done         ; Equivalant to JMP
+
+tab         ; Move to next tab stop (every eighth column)
+            lda  crx
+            cmp  #72          ; If crx>=72, newline
+            bcs  newline      ; /
+            and  #7
+            eor  #$FF
+            and  #7
+            tax
+            inx
+spaceLoop   txa
+            pha
+            lda  #SPACE       ; Print a space
+            jsr  putch        ; /
+            pla
+            tax
+            dex
+            bne  spaceLoop
+            beq  done
 
 backspace   ; Move cursor back one character and delete character
             ldx  crx          ; If at beginning of line

@@ -1,0 +1,61 @@
+;======================================================================
+; Tests tab
+;----------------------------------------------------------------------
+; Requires 8k+ memory
+;----------------------------------------------------------------------
+; Copyright (C) 2022 Lawrence Woodman <lwoodman@vlifesystems.com>
+; Licensed under an MIT licence.  Please see LICENCE.md for details.
+;======================================================================
+
+
+            .byt  $00, $20    ; Load address ($2000 / 8192)
+
+            * = $2000
+            jmp  main
+#include "display.a65"
+
+main        jsr  init8020
+            jsr  start80
+
+            ; Center the title text
+            ldx  #(80-(mainMsg-titleMsg))/2
+            ldy  #01
+            jsr  setxy
+
+            lda  #<titleMsg
+            sta  STRADDR
+            lda  #>titleMsg
+            sta  STRADDR+1
+            jsr  puts
+
+            ldx  #00          ; Set cursor X,Y to 0,6
+            ldy  #06          ; |
+            jsr  setxy        ; /
+
+            lda  #<mainMsg
+            sta  STRADDR
+            lda  #>mainMsg
+            sta  STRADDR+1
+            jsr  puts
+
+forever     jmp  forever
+            rts
+
+
+titleMsg    .aasc "Testing the TAB (9) character at every 8th column",0
+
+            ; String representing ASCII as a block
+mainMsg     .aasc "0123456789012345678901234567890123456789",NL
+            .aasc "One Two Three Four Five Six Seven",NL,NL
+            .aasc "One",TAB,"Two",TAB,"Three",TAB,"Four",TAB,"Five",TAB
+            .aasc "Six",TAB,"Seven",TAB,"Eight",TAB,"Nine",TAB,"Ten",TAB
+            .aasc "Eleven",TAB,"Twelve",TAB,"Thirteen",TAB,"Fourteen",TAB
+            .aasc "Fifteen",TAB,"Sixteen",TAB,"Seventeen",TAB
+            .aasc "Eighteen",TAB,"Nineteen",NL,NL
+            .aasc TAB,"One",TAB,"Two",TAB,"Three",TAB,"Four",TAB,"Five",TAB
+            .aasc "Six",TAB,"Seven",TAB,"Eight",TAB,"Nine",TAB,"Ten",NL
+            .aasc "Eleven",TAB,"Twelve",TAB,"Thirteen",TAB,"Fourteen",TAB
+            .aasc "Fifteen",TAB,"Sixteen",TAB,"Seventeen",TAB
+            .aasc "Eighteent",TAB,"Nineteen",NL,0
+
+shadScr8020 ; The shadow screen with room for 80x22 bytes

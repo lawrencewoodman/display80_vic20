@@ -132,8 +132,9 @@ pause       .byt 0
 
 msg         .aasc "80 columns on the Commodore VIC-20!",NL
             .aasc NL
-            .aasc "Supports Newline (software definable), Backspace and "
-            .aasc "ASCII 32-127 with case folded into a single case.  "
+            .aasc "Supports Newline (software definable), Backspace, "
+            .aasc "Tabs to next eighth column and "
+            .aasc "ASCII 32-126 with case folded into a single case.  "
             .aasc "The fonts are 2*8 and uses height and descenders "
             .aasc "to help differentiate the characters.  "
             .aasc "The numbers are taller for the same reason.",NL

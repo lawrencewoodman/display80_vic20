@@ -165,7 +165,7 @@ wipeLoop    sta  (STO),y
             ; putchxy80
             ; Print a character to screen at position
             ; specified on 80 column screen
-            ; This will print ASCII 32-127
+            ; This will print ASCII 32-126
             ;-----------------------------------------
             ; ACC - character to print (ASCII)
             ;   X - Column on simulated screen
