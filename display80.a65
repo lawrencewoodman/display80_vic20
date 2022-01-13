@@ -193,14 +193,12 @@ storeCh     pha               ; Push character to stack
 
             ; Find which quarter of a character definition
             ; NOTE This counts the quarters from right to left
-            ; TODO tidy this up
             txa
             and  #3           ; Look at right 2 bits
+            eor  #$FF         ; Subtract value from 3
+            and  #3           ; /
             sta  chquarter
-            lda  #3
-            sec
-            sbc  chquarter
-            sta  chquarter
+
 
             ; Find which half of a character definition
             ; and store the offset

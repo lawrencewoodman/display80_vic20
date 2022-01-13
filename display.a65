@@ -130,9 +130,9 @@ tab         ; Move to next tab stop (every eighth column)
             lda  crx
             cmp  #72          ; If crx>=72, newline
             bcs  newline      ; /
-            and  #7
-            eor  #$FF
-            and  #7
+            and  #7           ; Look at right 3 bits
+            eor  #$FF         ; Subtract value from 7
+            and  #7           ; /
             tax
             inx
 spaceLoop   txa
