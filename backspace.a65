@@ -9,10 +9,10 @@
 
 FDX         = $CB             ; Matrix key coordinate of key press
 
-            .byt  $00, $20    ; Load address ($2000 / 8192)
-
+            .word start       ; Load address ($2000 / 8192)
             * = $2000
-            jmp  main
+start       jmp  main
+
 #include "display.a65"
 
 main        .(

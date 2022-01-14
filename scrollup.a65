@@ -23,10 +23,11 @@ F7          = 136
 KEYP        = 80              ; The P key
 
 
-            .byt  $00, $20    ; Load address ($2000 / 8192)
 
+            .word start       ; Load address ($2000 / 8192)
             * = $2000
-            jmp  main
+start       jmp  main
+
 #include "display.a65"
 
 main        .(
