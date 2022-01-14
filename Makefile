@@ -1,7 +1,4 @@
-all: helloworld.prg printcharset.prg scrollup.prg backspace.prg
-
-helloworld.prg: helloworld.a65 display.a65 display80.a65 display20.a65 displayshadow.a65 fontdef.a65
-	xa -o helloworld.prg helloworld.a65
+all: printcharset.prg scrollup.prg backspace.prg
 
 printcharset.prg: printcharset.a65 display.a65 display80.a65 display20.a65 displayshadow.a65 fontdef.a65
 	xa -o printcharset.prg -l printcharset.lab printcharset.a65
@@ -15,9 +12,6 @@ backspace.prg: backspace.a65 display.a65 display80.a65 display20.a65 displayshad
 tabs.prg: tabs.a65 display.a65 display80.a65 display20.a65 displayshadow.a65 fontdef.a65
 	xa -o tabs.prg -l tabs.lab tabs.a65
 
-runhelloworld: helloworld.prg
-	xvic helloworld.prg
-
 runprintcharset: printcharset.prg
 	xvic printcharset.prg
 
@@ -30,8 +24,8 @@ runbackspace: backspace.prg
 runtabs: tabs.prg
 	xvic tabs.prg
 
-cptobin: helloworld.prg printcharset.prg scrollup.prg backspace.prg tabs.prg
-	cp  helloworld.prg printcharset.prg scrollup.prg backspace.prg tabs.prg bin/
+cptobin: printcharset.prg scrollup.prg backspace.prg tabs.prg
+	cp  printcharset.prg scrollup.prg backspace.prg tabs.prg bin/
 
 clean:
-	rm helloworld.prg printcharset.prg scrollup.prg backspace.prg tabs.prg
+	rm printcharset.prg scrollup.prg backspace.prg tabs.prg
