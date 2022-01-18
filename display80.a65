@@ -334,34 +334,32 @@ calcQDiff   sec
 
             ; Align character in CHDEF to correct quarter for character
             ; to print by shifting left
-shiftLeft   lda  D80_chqdiff
-            eor  #$FF         ; Make difference positive
-            sec               ; |
-            adc  #0           ; |
-            tax               ; /   Store difference in X
-slLoopA     ldy  #7           ; Number of rows of the char definition less one
-slLoopB     lda  CHDEF, y
+shiftLeft   ldy  #7           ; Number of rows of the char definition less one
+slLoopA     lda  CHDEF, y
+            ldx  D80_chqdiff
+slLoopB     asl
             asl
-            asl
+            inx               ; Difference is negative so increment until 0
+            bne  slLoopB      ; /
             sta  CHDEF, y
             dey
-            bpl  slLoopB
-            dex
-            bne  slLoopA
-            beq  copyCh
+            bpl  slLoopA
+            bmi  copyCh
 
             ; Align character in CHDEF to correct quarter for character
             ; to print by shifting right
-shiftRight  ldx  D80_chqdiff
-srLoopA     ldy  #7           ; Number of rows of the char definition less one
-srLoopB     lda  CHDEF, y
+shiftRight  ldy  #7           ; Number of rows of the char definition less one
+srLoopA     lda  CHDEF, y
+            ldx  D80_chqdiff
+srLoopB     lsr
             lsr
-            lsr
+            dex
+            bne  srLoopB
             sta  CHDEF, y
             dey
-            bpl  srLoopB
-            dex
-            bne  srLoopA
+            bpl  srLoopA
+
+
 
             ; Copy the character to the character definition.
             ; This gets the existing definition, clears the bits
