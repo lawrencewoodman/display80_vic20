@@ -7,254 +7,183 @@
 
 fontDef
 
-; Space
-          .byt  %00000000
-          .byt  %00000000
+; Space, Exclamation mark, Double quote, Hash/Pound
+          .byt %00011100
+          .byt %00011110
+          .byt %00010011
+          .byt %00010010
+          .byt %00010011
+          .byt %00000010
+          .byt %00010000
+          .byt %00000000
 
-; Exclamation mark
-          .byt  %00000000
-          .byt  %01011111
 
-; Double quote
-          .byt  %00000011
-          .byt  %00000011
-
-; Hash/Pound
-          .byt  %00111110
-          .byt  %00010100
-
-; Dollar
-          .byt  %11001110
-          .byt  %01110011
-
-; Percent
-          .byt  %00010010
+; Dollar, Percent, Ampersand, Single quote
+          .byt  %01000101
+          .byt  %11101001
+          .byt  %10001000
+          .byt  %10011100
+          .byt  %01101100
           .byt  %01001000
+          .byt  %11010100
+          .byt  %10000000
 
-; Ampersand
-          .byt  %00111110
-          .byt  %01011001
-
-; Single quote
+; Left parenthesis, Right parenthesis, Asterisk, Plus
+          .byt  %01100000
+          .byt  %10011000
+          .byt  %10010101
+          .byt  %10011111
+          .byt  %10010101
+          .byt  %10011000
+          .byt  %01100000
           .byt  %00000000
+
+; Comma, Minus, Period, Slash
+          .byt  %00000000
+          .byt  %00000001
+          .byt  %00000001
+          .byt  %00110001
+          .byt  %00000010
+          .byt  %01000110
+          .byt  %10000110
+          .byt  %00000000
+
+; Zero, One, Two, Three
+          .byt  %11011111
+          .byt  %11110101
+          .byt  %11010101
+          .byt  %11010111
+          .byt  %11011001
+          .byt  %11011001
+          .byt  %11011111
+          .byt  %00000000
+
+; Four, Five, Six, Seven
+          .byt  %10111111
+          .byt  %10101001
+          .byt  %10101001
+          .byt  %10111001
+          .byt  %11011101
+          .byt  %01011101
+          .byt  %01101101
+          .byt  %00000000
+
+; Eight, Nine, Colon, Semi-colon
+          .byt  %11110000
+          .byt  %10110000
+          .byt  %10110101
+          .byt  %01010000
+          .byt  %10010000
+          .byt  %10010101
+          .byt  %11010010
+          .byt  %00000000
+
+; Less than, Equal, Greater than, Question mark
+          .byt  %00000010
+          .byt  %00000001
+          .byt  %01001001
+          .byt  %10110110
+          .byt  %10000110
+          .byt  %01111000
+          .byt  %00000010
+          .byt  %00000000
+
+; At sign, A, B, C
+          .byt  %00001000
+          .byt  %11001000
+          .byt  %11111011
+          .byt  %11111110
+          .byt  %11111110
+          .byt  %10111111
+          .byt  %11010000
+          .byt  %00000000
+
+; D, E, F, G
+          .byt  %01000000
+          .byt  %01001100
+          .byt  %01111011
+          .byt  %11111111
+          .byt  %11101011
+          .byt  %11111001
+          .byt  %00000001
           .byt  %00000011
 
-; Left parenthesis
-          .byt  %00111110
-          .byt  %01000001
-
-; Right parenthesis
-          .byt  %01000001
-          .byt  %00111110
-
-; Asterisk
-          .byt  %00101010
-          .byt  %00011100
-
-; Plus
-          .byt  %00001000
-          .byt  %00011100
-
-; Comma
-          .byt  %01000000
-          .byt  %00100000
-
-; Minus
-          .byt  %00001000
+; H, I, J, K
+          .byt  %10000101
+          .byt  %10010001
+          .byt  %10000110
+          .byt  %11010110
+          .byt  %10010101
+          .byt  %10010101
+          .byt  %00000100
           .byt  %00001000
 
-; Period
+; L, M, N, O
+          .byt  %10100000
+          .byt  %10110000
+          .byt  %10110111
+          .byt  %10111011
+          .byt  %10101011
+          .byt  %11101011
           .byt  %00000000
-          .byt  %01100000
+          .byt  %00000000
 
-; Slash
-          .byt  %01110000
-          .byt  %00001110
-
-; Zero
-          .byt  %01111111
-          .byt  %01111111
-
-; One
-          .byt  %00000010
-          .byt  %01111111
-
-; Two
-          .byt  %01110001
-          .byt  %01001111
-
-; Three
-          .byt  %01001001
-          .byt  %01111111
-
-; Four
-          .byt  %00011111
-          .byt  %01110000
-
-; Five
-          .byt  %01001111
-          .byt  %00111001
-
-; Six
-          .byt  %01111111
-          .byt  %01110001
-
-; Seven
+; P, Q, R, S
+          .byt  %00000000
           .byt  %00000001
-          .byt  %01111111
+          .byt  %11111110
+          .byt  %11111010
+          .byt  %11111001
+          .byt  %10011011
+          .byt  %10010000
+          .byt  %10010000
 
-; Eight
-          .byt  %01110111
-          .byt  %01001001
-
-; Nine
-          .byt  %00000111
-          .byt  %01111111
-
-; Colon
+; T, U, V, W
+          .byt  %00000010
+          .byt  %10000010
+          .byt  %11101011
+          .byt  %10101011
+          .byt  %10101011
+          .byt  %11110110
           .byt  %00000000
-          .byt  %00100100
+          .byt  %00000000
 
-; Semi-colon
-          .byt  %01000000
-          .byt  %00100100
-
-; Less than
-          .byt  %00011000
-          .byt  %00100100
-
-; Equal
-          .byt  %00101000
-          .byt  %00101000
-
-; Greater than
-          .byt  %00100100
-          .byt  %00011000
-
-; Question mark
-          .byt  %01011001
-          .byt  %00000110
-
-; At sign
-          .byt  %01111110
+; X, Y, Z, Left square bracket
+          .byt  %00000011
+          .byt  %10000010
+          .byt  %10101110
+          .byt  %00110110
+          .byt  %01111010
           .byt  %01011110
-
-chA       .byt  %00111100
-          .byt  %01111100
-
-chB       .byt  %00111111
-          .byt  %00111000
-
-chC       .byt  %00111100
-          .byt  %00100100
-
-chD       .byt  %00111000
-          .byt  %00111111
-
-chE       .byt  %00111100
-          .byt  %00101100
-
-chF       .byt  %00111110
-          .byt  %00001010
-
-chG       .byt  %10011100
-          .byt  %11111100
-
-chH       .byt  %00111111
-          .byt  %00001000
-
-chI       .byt  %00000000
-          .byt  %00111010
-
-chJ       .byt  %10000000
-          .byt  %01111101
-
-chK       .byt  %00001100
-          .byt  %00110011
-
-chL       .byt  %00111111
-          .byt  %00100000
-
-chM       .byt  %00111111
-          .byt  %00001110
-
-chN       .byt  %00111000
-          .byt  %00000100
-
-chO       .byt  %00111100
-          .byt  %00111100
-
-chP       .byt  %11111100
-          .byt  %00011100
-
-chQ       .byt  %00011100
-          .byt  %11111100
-
-chR       .byt  %00111100
-          .byt  %00000100
-
-chS       .byt  %00101100
-          .byt  %00110010
-
-chT       .byt  %00111110
-          .byt  %00100100
-
-chU       .byt  %00111100
-          .byt  %00100000
-
-chV       .byt  %00011100
-          .byt  %00100000
-
-chW       .byt  %00111111
-          .byt  %00011100
-
-chX       .byt  %00000110
+          .byt  %00010011
           .byt  %00110000
 
-chY       .byt  %10011100
-          .byt  %11111000
-
-chZ       .byt  %00110100
-          .byt  %00101100
-
-; Left square bracket
-          .byt  %01111111
-          .byt  %01000001
-
-; Backslash
-          .byt  %00001110
+; Backslash, Right square bracket, Caret / Circumflex, Underscore
+          .byt  %00110100
+          .byt  %10011000
+          .byt  %10011000
+          .byt  %10010000
+          .byt  %01010000
+          .byt  %01010000
           .byt  %01110000
+          .byt  %00000011
 
-; Right square bracket
-          .byt  %01000001
-          .byt  %01111111
-
-; Caret / Circumflex
-          .byt  %00000110
-          .byt  %00000001
-
-; Underscore
-          .byt  %10000000
-          .byt  %10000000
-
-; Grave accent
-          .byt  %00000001
-          .byt  %00000010
-
-; Left brace {
-          .byt  %00110110
-          .byt  %01000001
-
-; Vertical bar
-          .byt  %00000000
-          .byt  %11111111
-
-; Right brace
-          .byt  %01000001
-          .byt  %00110110
+; Grave accent, Left brace, Vertical bar, Right brace
+          .byt  %10010110
+          .byt  %01100101
+          .byt  %00100101
+          .byt  %00000100
+          .byt  %00100101
+          .byt  %00100101
+          .byt  %00010110
+          .byt  %00000100
 
 ; Tilde
-          .byt  %00010000
-          .byt  %00001000
-
-          .byt  0
+          .byt  %00000000
+          .byt  %00000000
+          .byt  %00000000
+          .byt  %01000000
+          .byt  %10000000
+          .byt  %00000000
+          .byt  %00000000
+          .byt  %00000000

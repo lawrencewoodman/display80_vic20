@@ -32,7 +32,7 @@ start       jmp  main
 
 main        .(
             jsr  init8020
-            jsr  start20
+            jsr  start80
             lda  #00
             sta  pause
 

@@ -185,23 +185,21 @@ ge123lt127  sec
             sbc  #26
             jmp  storeCh
 ge127       lda  #32          ; Space
-storeCh     pha               ; Push character to stack
+storeCh     sta  D80_ch       ; Store the character
             lda  #$00         ; Zero CHRADDR
             sta  CHRADDR      ; |
             lda  #$00         ; |
             sta  CHRADDR+1    ; /
 
             ; Find which quarter of a character definition
-            ; NOTE This counts the quarters from right to left
             txa
             and  #3           ; Look at right 2 bits
-            eor  #$FF         ; Subtract value from 3
-            and  #3           ; /
             sta  chquarter
 
 
-            ; Find which half of a character definition
+            ; Find which vertical half of a character definition
             ; and store the offset
+            ; TODO this could probably be improved with a test, branch and load
             tya
             clc
             and  #1
@@ -260,12 +258,18 @@ mul16        ; TODO find better name
             sta  CHRADDR
 
             ; Copy the character to the screen
-copyCh      lda  #00
+            lda  #00
             sta  CHDEFADDR+1
-            pla               ; Pull character off stack
+            lda  D80_ch       ; Load the character
             sec
             sbc  #SPACE       ; Font definitions are from space onwards
-            sta  CHDEFADDR    ; Multiply character by 2
+            lsr               ; Divide by 4
+            lsr               ; /
+            sta  CHDEFADDR
+            asl  CHDEFADDR    ; Multiply character by 8
+            rol  CHDEFADDR+1  ; |
+            asl  CHDEFADDR    ; |
+            rol  CHDEFADDR+1  ; |
             asl  CHDEFADDR    ; |
             rol  CHDEFADDR+1  ; /
 
@@ -277,61 +281,96 @@ copyCh      lda  #00
             adc  #>fontDef     ; msb
             sta  CHDEFADDR+1
 
-
-            lda  #1           ; Init bitmasks in self-modifying code
-            sta  andL+1       ; |
-            sta  andR+1       ; |
-            sta  realignL-1   ; /
-            sta  realignR-1   ; /
+            ; Find character def quarter
+            lda  D80_ch
+            and  #3
+            sta  D80_chdefq   ; Save quarter for character def
 
             ; Put character definition into 8 bytes using bits 1 and 2
-            ldx  #0
-getLoop     ldy  #0
-            lda  (CHDEFADDR),y
-andL        and  #1
-            ldy  #1           ; Align the left bit
-realignL    dey               ; |
-            beq  alignDoneL   ; |
-            lsr               ; |
-            jmp  realignL     ; /
-alignDoneL
-            asl
-            sta  CHDEF, x
-            ldy  #01
-            lda  (CHDEFADDR), y
-andR        and  #1
-            ldy  #1           ; Align the right bit
-realignR    dey               ; |
-            beq  alignDoneR   ; |
-            lsr               ; |
-            jmp  realignR     ; /
-alignDoneR
-            ora  CHDEF, x
+            ldy  #7
+            lda  D80_chdefq
+            cmp  #00
+            beq  qd0
+            cmp  #01
+            beq  qd1
+            cmp  #02
+            beq  qd2
 
-            ; Put character in correct quarter
-            ldy  chquarter
-realignQ    beq  alignDoneQ
-            asl
-            asl
+; TODO Store a value to use in AND below rather than 4 q jumps
+
+qd3         lda  (CHDEFADDR),y
+            and  #$3
+            sta  CHDEF, y
             dey
-            jmp  realignQ
-alignDoneQ
+            bpl  qd3
+            bmi  calcQDiff
 
-            sta  CHDEF, x
-            asl  andL+1       ; Self-modify code to move to next bits
-            asl  andR+1       ; |
-            inc  realignL-1   ; /
-            inc  realignR-1   ; /
-            inx
-            cpx  #8
-            bne  getLoop
+qd2         lda  (CHDEFADDR),y
+            and  #$C
+            sta  CHDEF, y
+            dey
+            bpl  qd2
+            bmi  calcQDiff
 
+qd1         lda  (CHDEFADDR),y
+            and  #$30
+            sta  CHDEF, y
+            dey
+            bpl  qd1
+            bmi  calcQDiff
+
+qd0         lda  (CHDEFADDR),y
+            and  #$C0
+            sta  CHDEF, y
+            dey
+            bpl  qd0
+
+            ; Calculate the difference between the quarter of the char
+            ; definition and where it is needed
+calcQDiff   sec
+            lda  chquarter
+            sbc  D80_chdefq
+            sta  D80_chqdiff
+            beq  copyCh       ; No shifting needed so just copy the character
+            bpl  shiftRight
+
+
+            ; Align character CHDEF to bits correct quarter for character
+            ; to print by shifting left
+shiftLeft   lda  D80_chqdiff
+            eor  #$FF         ; Make difference positive
+            sec               ; |
+            adc  #0           ; |
+            tax               ; /   Store difference in X
+slLoopA     ldy  #7           ; Number of rows of the char definition less one
+slLoopB     lda  CHDEF, y
+            asl
+            asl
+            sta  CHDEF, y
+            dey
+            bpl  slLoopB
+            dex
+            bne  slLoopA
+            beq  copyCh
+
+            ; Align character CHDEF to bits correct quarter for character
+            ; to print by shifting right
+shiftRight  ldx  D80_chqdiff
+srLoopA     ldy  #7           ; Number of rows of the char definition less one
+srLoopB     lda  CHDEF, y
+            lsr
+            lsr
+            sta  CHDEF, y
+            dey
+            bpl  srLoopB
+            dex
+            bne  srLoopA
 
             ; Copy the character to the character definition.
             ; This gets the existing definition, clears the bits
             ; where this character will go and ORs the remaining
             ; bits with the new character.
-            ldy  #7
+copyCh      ldy  #7
             lda  chquarter
             cmp  #00
             beq  q0
@@ -341,7 +380,7 @@ alignDoneQ
             beq  q2
 
 q3          lda  (CHRADDR),y
-            and  #$3F
+            and  #$FC
             ora  CHDEF, y
             sta  (CHRADDR),y
             dey
@@ -349,7 +388,7 @@ q3          lda  (CHRADDR),y
             bmi  done
 
 q2          lda  (CHRADDR),y
-            and  #$CF
+            and  #$F3
             ora  CHDEF, y
             sta  (CHRADDR),y
             dey
@@ -357,7 +396,7 @@ q2          lda  (CHRADDR),y
             bmi  done
 
 q1          lda  (CHRADDR),y
-            and  #$F3
+            and  #$CF
             ora  CHDEF, y
             sta  (CHRADDR),y
             dey
@@ -365,7 +404,7 @@ q1          lda  (CHRADDR),y
             bmi  done
 
 q0          lda  (CHRADDR),y
-            and  #$FC
+            and  #$3F
             ora  CHDEF, y
             sta  (CHRADDR),y
             dey
@@ -377,5 +416,9 @@ done        rts
 ;====================================
 ; Data
 ;====================================
-chquarter   .byt 0            ; Quarter of character definition right to left
+chquarter   .byt 0            ; Quarter of character definition
 chhalfoff   .byt 0            ; Half of character definition offset (half*8)
+D80_ch      .byt 0            ; A character
+D80_chdefq  .byt 0            ; The quarter that the char definition is in
+D80_chqdiff .byt 0            ; The difference between the quarter of the char
+                              ; definition and where it is needed

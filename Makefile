@@ -1,4 +1,4 @@
-all: printcharset.prg scrollup.prg backspace.prg
+all: printcharset.prg scrollup.prg backspace.prg tabs.prg
 
 printcharset.prg: printcharset.a65 display.a65 display80.a65 display20.a65 displayshadow.a65 fontdef.a65
 	xa -o printcharset.prg -l printcharset.lab printcharset.a65
