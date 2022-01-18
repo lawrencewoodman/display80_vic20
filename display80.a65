@@ -199,14 +199,13 @@ storeCh     sta  D80_ch       ; Store the character
 
             ; Find which vertical half of a character definition
             ; and store the offset
-            ; TODO this could probably be improved with a test, branch and load
             tya
-            clc
-            and  #1
-            asl               ; Multiply by 8
-            asl               ; |
-            asl               ; /
-            sta  chhalfoff
+            lsr
+            bcs  vhalf2
+            lda  #00
+            beq  storeOff
+vhalf2      lda  #08
+storeOff    sta  chhalfoff
 
             ; TODO Put this where zero CHRADDR is above
             ; Find location of simulated column pair
