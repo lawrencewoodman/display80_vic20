@@ -286,7 +286,6 @@ mul16       ; Multiply by 16 to find location of character
             ; Put character definition into 8 bytes
             ldy  #7
             lda  D80_chdefq
-            cmp  #00
             beq  qd0
             cmp  #01
             beq  qd1
@@ -300,27 +299,53 @@ qd3         lda  (CHDEFADDR),y
             sta  CHDEF, y
             dey
             bpl  qd3
-            bmi  calcQDiff
+            bmi  setMask
 
 qd2         lda  (CHDEFADDR),y
             and  #$C
             sta  CHDEF, y
             dey
             bpl  qd2
-            bmi  calcQDiff
+            bmi  setMask
 
 qd1         lda  (CHDEFADDR),y
             and  #$30
             sta  CHDEF, y
             dey
             bpl  qd1
-            bmi  calcQDiff
+            bmi  setMask
 
 qd0         lda  (CHDEFADDR),y
             and  #$C0
             sta  CHDEF, y
             dey
             bpl  qd0
+
+            ; TODO  sort out comment
+            ; Copy the character to the character definition.
+            ; This gets the existing definition, clears the bits
+            ; where this character will go and ORs the remaining
+            ; bits with the new character.
+setMask     ldy  #7
+            lda  chquarter
+            beq  q0
+            cmp  #01
+            beq  q1
+            cmp  #02
+            beq  q2
+
+q3          lda  #$FC
+            sta  D80_chmask
+            bne  calcQDiff
+q2          lda  #$F3
+            sta  D80_chmask
+            bne  calcQDiff
+q1          lda  #$CF
+            sta  D80_chmask
+            bne  calcQDiff
+q0          lda  #$3F
+            sta  D80_chmask
+
 
             ; Calculate the difference between the quarter of the char
             ; definition and where it is needed
@@ -334,76 +359,56 @@ calcQDiff   sec
 
             ; Align character in CHDEF to correct quarter for character
             ; to print by shifting left
+
+            ; TODO sort out name of label and comments
+            ; Copy the character to the character definition.
+            ; This gets the existing definition, clears the bits
+            ; where this character will go and ORs the remaining
+            ; bits with the new character.
 shiftLeft   ldy  #7           ; Number of rows of the char definition less one
-slLoopA     lda  CHDEF, y
-            ldx  D80_chqdiff
+slLoopA     ldx  D80_chqdiff
+            lda  CHDEF, y
 slLoopB     asl
             asl
             inx               ; Difference is negative so increment until 0
             bne  slLoopB      ; /
             sta  CHDEF, y
+            ; TODO AND here with another mask and remove need to do above
+            lda  (CHRADDR),y
+            and  D80_chmask
+            ora  CHDEF,y
+            sta  (CHRADDR),y
             dey
             bpl  slLoopA
-            bmi  copyCh
+            bmi  done
 
             ; Align character in CHDEF to correct quarter for character
             ; to print by shifting right
 shiftRight  ldy  #7           ; Number of rows of the char definition less one
-srLoopA     lda  CHDEF, y
-            ldx  D80_chqdiff
+srLoopA     ldx  D80_chqdiff
+            lda  CHDEF, y
 srLoopB     lsr
             lsr
             dex
             bne  srLoopB
             sta  CHDEF, y
+            ; TODO AND here with another mask and remove need to do above
+            lda  (CHRADDR),y
+            and  D80_chmask
+            ora  CHDEF,y
+            sta  (CHRADDR),y
             dey
             bpl  srLoopA
+            bmi  done
 
-
-
-            ; Copy the character to the character definition.
-            ; This gets the existing definition, clears the bits
-            ; where this character will go and ORs the remaining
-            ; bits with the new character.
+            ; Straight copy without shifting
 copyCh      ldy  #7
-            lda  chquarter
-            cmp  #00
-            beq  q0
-            cmp  #01
-            beq  q1
-            cmp  #02
-            beq  q2
-
-q3          lda  (CHRADDR),y
-            and  #$FC
+copyChLoop  lda  (CHRADDR),y
+            and  D80_chmask
             ora  CHDEF, y
             sta  (CHRADDR),y
             dey
-            bpl  q3
-            bmi  done
-
-q2          lda  (CHRADDR),y
-            and  #$F3
-            ora  CHDEF, y
-            sta  (CHRADDR),y
-            dey
-            bpl  q2
-            bmi  done
-
-q1          lda  (CHRADDR),y
-            and  #$CF
-            ora  CHDEF, y
-            sta  (CHRADDR),y
-            dey
-            bpl  q1
-            bmi  done
-
-q0          lda  (CHRADDR),y
-            and  #$3F
-            ora  CHDEF, y
-            sta  (CHRADDR),y
-            dey
-            bpl  q0
+            bpl  copyChLoop
 
 done        rts
 .)
@@ -417,3 +422,5 @@ D80_ch      .byt 0            ; A character
 D80_chdefq  .byt 0            ; The quarter that the char definition is in
 D80_chqdiff .byt 0            ; The difference between the quarter of the char
                               ; definition and where it is needed
+D80_chmask  .byt 0            ; Bitmask used to wipe bits before copy char
+                              ; to screen/character map
