@@ -221,17 +221,15 @@ findCol     txa
 findRow     cpy  #00
             beq  mul16
             ; Add number of real columns to address
-            clc
+findRowLoop clc
             lda  CHRADDR      ; lsb
             adc  #RNUMCOL80
             sta  CHRADDR      ; lsb
             dey
-            jmp  findRow
+            bne  findRowLoop
 
 
-mul16        ; TODO find better name
-
-            ; Multiply by 16 to find location of character
+mul16       ; Multiply by 16 to find location of character
             ; Shift left 4 times to multiply by 16
             asl  CHRADDR       ; lsb
             rol  CHRADDR+1     ; msb
@@ -285,7 +283,7 @@ mul16        ; TODO find better name
             and  #3
             sta  D80_chdefq   ; Save quarter for character def
 
-            ; Put character definition into 8 bytes using bits 1 and 2
+            ; Put character definition into 8 bytes
             ldy  #7
             lda  D80_chdefq
             cmp  #00
@@ -334,7 +332,7 @@ calcQDiff   sec
             bpl  shiftRight
 
 
-            ; Align character CHDEF to bits correct quarter for character
+            ; Align character in CHDEF to correct quarter for character
             ; to print by shifting left
 shiftLeft   lda  D80_chqdiff
             eor  #$FF         ; Make difference positive
@@ -352,7 +350,7 @@ slLoopB     lda  CHDEF, y
             bne  slLoopA
             beq  copyCh
 
-            ; Align character CHDEF to bits correct quarter for character
+            ; Align character in CHDEF to correct quarter for character
             ; to print by shifting right
 shiftRight  ldx  D80_chqdiff
 srLoopA     ldy  #7           ; Number of rows of the char definition less one
