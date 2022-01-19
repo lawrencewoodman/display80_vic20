@@ -1,4 +1,4 @@
-80_columns_vic20
+display80_vic20
 ================
 
 Demonstration of an 80 column text mode for the Commodore VIC-20 using a 2x8 font.
@@ -12,14 +12,14 @@ The files are all written for the [XA](https://www.floodgap.com/retrotech/xa/) a
   <dt>backspace.a65</dt>
   <dd>A program to test the backspace character</dd>
 
-  <dt>helloword.a65</dt>
-  <dd>A program to print 'hello world' a couple of times</dd>
-
   <dt>printcharset.a65</dt>
   <dd>A program to to prints the character set</dd>
 
   <dt>scrollup.a65</dt>
   <dd>A program to scroll some text repeatedly on the screen</dd>
+
+  <dt>tabs.a65</dt>
+  <dd>A program to test tabs at every eighth column</dd>
 
   <dt>display.a65</dt>
   <dd>The code that is included by each of the programs above to provide the text mode utilities for the 80/20 column display</dd>
