@@ -16,18 +16,18 @@ start       jmp  main
 #include "display.a65"
 
 main        .(
-            jsr  init8020
-            jsr  start80
+            jsr  D80_init
+            jsr  D80_start80
 
 forever     ldx  #00          ; Set cursor X,Y to 0,0
             ldy  #00          ; |
-            jsr  setxy        ; /
+            jsr  D80_setxy    ; /
 
             lda  #<msgA
             sta  STRADDR
             lda  #>msgA
             sta  STRADDR+1
-            jsr  puts
+            jsr  D80_puts
             jsr  delay
 
             lda  #<msgA
@@ -46,19 +46,19 @@ forever     ldx  #00          ; Set cursor X,Y to 0,0
 
             ldx  #60          ; Set cursor X,Y to 60,1
             ldy  #01          ; |
-            jsr  setxy        ; /
+            jsr  D80_setxy    ; /
             lda  #<msgB
             sta  STRADDR
             lda  #>msgB
             sta  STRADDR+1
-            jsr  puts
+            jsr  D80_puts
             jsr  delay
 
             lda  #<msgA
             sta  STRADDR
             lda  #>msgA
             sta  STRADDR+1
-            jsr  puts
+            jsr  D80_puts
             jsr  delay
 
             lda  #<msgA
@@ -102,7 +102,7 @@ loop        lda  (STRADDR), y
             tya
             pha
             lda  #BS
-            jsr  putch
+            jsr  D80_putch
             pla
             tay
             iny
@@ -114,4 +114,4 @@ done        rts
 msgA        .aasc "This is a some text to be deleted",0
 msgB        .aasc "!This is also some text to be deleted!",0
 
-shadScr8020 ; The shadow screen with room for 80x22 bytes
+D80_shadScr ; The shadow screen with room for 80x22 bytes

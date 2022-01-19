@@ -13,13 +13,13 @@ RNUMCOLSHD  = 80
 RNUMROWSHD  = 22
 
             ;-------------------------------------
-            ; clrScrShad
+            ; D80_ClrScrShad
             ; Clear the shadow screen
             ;-------------------------------------
-clrScrShad  .(
-            lda  #<shadScr8020
+D80_ClrScrShad  .(
+            lda  #<D80_shadScr
             sta  SHADADDR
-            lda  #>shadScr8020
+            lda  #>D80_shadScr
             sta  SHADADDR+1
             ldy  #00
 loop        lda  #SPACE
@@ -28,47 +28,47 @@ loop        lda  #SPACE
             bne  doneInc                ; |
             inc  SHADADDR+1             ; /
 doneInc     lda  SHADADDR+1             ; Test if at end of shadow screen
-            cmp  #>shadScr8020+(80*22)  ; |
+            cmp  #>D80_shadScr+(80*22)  ; |
             bne  loop                   ; |
             lda  SHADADDR               ; |
-            cmp  #<shadScr8020+(80*22)  ; |
+            cmp  #<D80_shadScr+(80*22)  ; |
             bne  loop                   ; /
             rts
 .)
 
 
             ;------------------------------------------
-            ; redraw
+            ; D80_redraw
             ; Redraw the screen from the shadow screen
             ;------------------------------------------
             ; TODO check if need redraw might be able to just repoint
             ; screen and character set in some situations
-redraw      .(
-            lda  #1           ; Set as in middle of redraw
-            sta  inRedraw     ; /
-            lda  crx          ; Push crx and cry to stack
-            pha               ; |
-            lda  cry          ; |
-            pha               ; /
+D80_redraw  .(
+            lda  #1               ; Set as in middle of redraw
+            sta  D80_InRedraw     ; /
+            lda  D80_Crx          ; Push crx and cry to stack
+            pha                   ; |
+            lda  D80_Cry          ; |
+            pha                   ; /
             lda  #(RNUMCOLSHD-1)
-            sta  crx
+            sta  D80_Crx
             lda  #00
-            sta  cry
-            lda  #<shadScr8020
+            sta  D80_Cry
+            lda  #<D80_shadScr
             sta  SHADADDR
-            lda  #>shadScr8020
+            lda  #>D80_shadScr
             sta  SHADADDR+1
 
-loop        ldy  crx             ; Copy a line of text to the screen
+loop        ldy  D80_Crx         ; Copy a line of text to the screen
             lda  (SHADADDR),y    ; |  y here contains column (crx)
-            ldx  crx             ; |
-            ldy  cry             ; |
-            jsr  putchxy         ; |
-            dec  crx             ; |
+            ldx  D80_Crx         ; |
+            ldy  D80_Cry         ; |
+            jsr  D80_putchxy     ; |
+            dec  D80_Crx         ; |
             bpl  loop            ; /
 
             lda  #(RNUMCOLSHD-1) ; Move crx back to end of line
-            sta  crx             ; /
+            sta  D80_Crx         ; /
 
             clc                  ; Increment SHADADDR by RNUMCOLSHD
             lda  SHADADDR        ; |  lsb
@@ -77,44 +77,44 @@ loop        ldy  crx             ; Copy a line of text to the screen
             bcc  nextLine        ; |
             inc  SHADADDR+1      ; /  msb
 
-nextLine    inc  cry
-            lda  cry
+nextLine    inc  D80_Cry
+            lda  D80_Cry
             cmp  #RNUMROWSHD
             bne  loop
 
             pla
-            sta  cry
+            sta  D80_Cry
             pla
-            sta  crx
+            sta  D80_Crx
 
-            lda  #0           ; Set as not in middle of redraw
-            sta  inRedraw     ; /
+            lda  #0               ; Set as not in middle of redraw
+            sta  D80_InRedraw     ; /
             rts
 .)
 
 
             ;-----------------------------------------
-            ; putchxyShd
+            ; D80_PutchxyShd
             ; Store a character in the shadow screen
             ;-----------------------------------------
             ; ACC - character to print (ASCII)
             ;   X - Column on simulated screen
             ;   Y - Row on simulated screen
             ;-----------------------------------------
-putchxyShd  .(
-            ; Add column to shadScr8020 (shadow screen)
-            pha               ; Push character to stack
-            lda  inRedraw     ; If in redraw then return
-            beq  findCol      ; |
-            pla               ; |
-            rts               ; /
+D80_PutchxyShd  .(
+            ; Add column to D80_shadScr (shadow screen)
+            pha                   ; Push character to stack
+            lda  D80_InRedraw     ; If in redraw then return
+            beq  findCol          ; |
+            pla                   ; |
+            rts                   ; /
 
 findCol     clc
             txa
-            adc  #<shadScr8020  ; lsb
+            adc  #<D80_shadScr  ; lsb
             sta  SHADADDR       ; lsb
             lda  #00
-            adc  #>shadScr8020  ; msb
+            adc  #>D80_shadScr  ; msb
             sta  SHADADDR+1     ; msb
 
             ; Find location of row
@@ -138,18 +138,18 @@ done        rts
 
 
             ;-----------------------------------------
-            ; scrollupShad
+            ; D80_ScrollupShad
             ; Scroll shadow screen up two lines
-            ; NOTE two lines to match scrollup80
+            ; NOTE two lines to match D80_Scrollup80
             ;-----------------------------------------
-scrollupShad .(
-            lda  #<(shadScr8020+(2*RNUMCOLSHD))   ; Set copy start locations
+D80_ScrollupShad .(
+            lda  #<(D80_shadScr+(2*RNUMCOLSHD))   ; Set copy start locations
             sta  SFROM                            ; |
-            lda  #>(shadScr8020+(2*RNUMCOLSHD))   ; |
+            lda  #>(D80_shadScr+(2*RNUMCOLSHD))   ; |
             sta  SFROM+1                          ; |
-            lda  #<shadScr8020                    ; |
+            lda  #<D80_shadScr                    ; |
             sta  STO                              ; |
-            lda  #>shadScr8020                    ; |
+            lda  #>D80_shadScr                    ; |
             sta  STO+1                            ; /
 
             ldy  #0
@@ -173,9 +173,9 @@ partLoop    lda  (SFROM),y                   ; Copy remainder
             bne  partLoop                    ; /
 
             ; Wipe last line
-wipe        lda  #<(shadScr8020+(RNUMCOLSHD*(RNUMROWSHD-2)))  ; lsb
+wipe        lda  #<(D80_shadScr+(RNUMCOLSHD*(RNUMROWSHD-2)))  ; lsb
             sta  STO
-            lda  #>(shadScr8020+(RNUMCOLSHD*(RNUMROWSHD-2)))  ; msb
+            lda  #>(D80_shadScr+(RNUMCOLSHD*(RNUMROWSHD-2)))  ; msb
             sta  STO+1
             ldy  #(2*RNUMCOLSHD)   ; Wipe two lines of characters
             lda  #SPACE            ; Use a space to wipe the lines

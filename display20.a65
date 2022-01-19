@@ -16,22 +16,22 @@ RNUMROW20   = 22
             ; start20
             ; Start 20 character screen
             ;--------------------------------
-start20     lda  #MODE20      ; Set which mode we are in
-            sta  mode8020     ; /
-            lda  #1           ; Set viewable part of screen to first quarter
-            jsr  setView20    ; /
-            jsr  cfgScr20     ; Configure screen
-            jsr  initClr20    ; Init the colour map
-            jmp  clrScr20     ; Clear the screen (RTS)
+D80_start20 lda  #MODE20          ; Set which mode we are in
+            sta  D80_Mode         ; /
+            lda  #1               ; Set viewable part of screen to first quarter
+            jsr  D80_setView20    ; /
+            jsr  D80_CfgScr20     ; Configure screen
+            jsr  D80_InitClr20    ; Init the colour map
+            jmp  D80_ClrScr20     ; Clear the screen (RTS)
 
 
             ;-----------------------------------------------
-            ; setView20
+            ; D80_setView20
             ; Set the view window on the 20 column screen
             ;-----------------------------------------------
             ; ACC - Quarter to display (1-4)
             ;-----------------------------------------------
-setView20   .(
+D80_setView20   .(
             cmp  #1
             beq  q1
             cmp  #2
@@ -42,36 +42,37 @@ setView20   .(
             beq  q4
             bne  done
 
-q1          lda  #00          ; Set viewable part of screen
-            sta  viewcolge    ; |
-            lda  #20          ; |
-            sta  viewcollt    ; /
+q1          lda  #00              ; Set viewable part of screen
+            sta  D80_Viewcolge    ; |
+            lda  #20              ; |
+            sta  D80_Viewcollt    ; /
             jmp  done
-q2          lda  #20          ; Set viewable part of screen
-            sta  viewcolge    ; |
-            lda  #40          ; |
-            sta  viewcollt    ; /
+q2          lda  #20              ; Set viewable part of screen
+            sta  D80_Viewcolge    ; |
+            lda  #40              ; |
+            sta  D80_Viewcollt    ; /
             jmp  done
-q3          lda  #40          ; Set viewable part of screen
-            sta  viewcolge    ; |
-            lda  #60          ; |
-            sta  viewcollt    ; /
+q3          lda  #40              ; Set viewable part of screen
+            sta  D80_Viewcolge    ; |
+            lda  #60              ; |
+            sta  D80_Viewcollt    ; /
             jmp  done
-q4          lda  #60          ; Set viewable part of screen
-            sta  viewcolge    ; |
-            lda  #80          ; |
-            sta  viewcollt    ; /
+q4          lda  #60              ; Set viewable part of screen
+            sta  D80_Viewcolge    ; |
+            lda  #80              ; |
+            sta  D80_Viewcollt    ; /
 
 done        rts
 .)
 
 
             ;-----------------------------------------------
-            ; cfgScr20
+            ; D80_CfgScr20
             ; Configure screen dimensions, position and
             ; memory locations
             ;-----------------------------------------------
-cfgScr20    lda  #RVTVORIGIN
+D80_CfgScr20
+            lda  #RVTVORIGIN
             sta  VICCR1       ; Set vertical TV origin
             lda  #(128|RNUMCOL20)
             sta  VICCR2       ; Set number of columns displayed
@@ -86,10 +87,10 @@ cfgScr20    lda  #RVTVORIGIN
 
 
             ;-----------------------------------------------
-            ; initClr20
+            ; D80_InitClr20
             ; Init the colour map to all a single colour
             ;-----------------------------------------------
-initClr20   .(
+D80_InitClr20   .(
             ldy  #00
             lda  #CLBLACK
 loop        sta  COLMAPBASE, y
@@ -100,10 +101,10 @@ loop        sta  COLMAPBASE, y
 
 
             ;-------------------------------------
-            ; clrScr20
+            ; D80_ClrScr20
             ; Clear the 20 column screen
             ;-------------------------------------
-clrScr20    .(
+D80_ClrScr20    .(
             lda  #00
             sta  SCRADDR
             lda  #>SCRBASE
@@ -122,11 +123,11 @@ doneInc     lda  SCRADDR+1
 
 
             ;-----------------------------------------
-            ; scrollup20
+            ; D80_Scrollup20
             ; Scroll 20 column screen up two lines
-            ; NOTE two lines to match scrollup80
+            ; NOTE two lines to match D80_Scrollup80
             ;-----------------------------------------
-scrollup20  .(
+D80_Scrollup20  .(
             lda  #<(SCRBASE+(2*RNUMCOL20))  ; Set copy start locations
             sta  SFROM                      ; |
             lda  #>(SCRBASE+(2*RNUMCOL20))  ; |
@@ -168,14 +169,14 @@ wipeLoop    sta  (STO),y
             bne  wipeLoop
 
             lda  #(SNUMROW-2)      ; Set the cursor to the bottom line
-            sta  cry
+            sta  D80_Cry
 
             rts
 .)
 
 
             ;-----------------------------------------
-            ; putchxy20
+            ; D80_Putchxy20
             ; Print a character to screen at position
             ; specified on 20 column screen
             ;-----------------------------------------
@@ -183,21 +184,21 @@ wipeLoop    sta  (STO),y
             ;   X - Column on simulated screen
             ;   Y - Row on simulated screen
             ;-----------------------------------------
-putchxy20   .(
+D80_Putchxy20   .(
             ; See if in visible quarter of screen
-            cpx  viewcolge
+            cpx  D80_Viewcolge
             bcs  ge
             jmp  done
-ge          cpx  viewcollt
+ge          cpx  D80_Viewcollt
             bcc  inView
             jmp  done
 
 inView      ; The location is in view
-            pha               ; Push character to stack
-            sec               ; Align x with first column
-            txa               ; |
-            sbc  viewcolge    ; |
-            tax               ; /
+            pha                   ; Push character to stack
+            sec                   ; Align x with first column
+            txa                   ; |
+            sbc  D80_Viewcolge    ; |
+            tax                   ; /
 
             ; Find column
 findCol     txa
@@ -226,7 +227,7 @@ addScrAddr  clc
             sta  SCRADDR+1    ; msb
 
 storeCh     pla
-            jsr  asctocbm
+            jsr  D80_asctocbm
             ldy  #00
             sta  (SCRADDR), y
 done        rts
@@ -234,12 +235,12 @@ done        rts
 
 
             ;-----------------------------------------
-            ; asctocbm
+            ; D80_asctocbm
             ; Convert ASCII to PETSCII
             ;-----------------------------------------
             ; ACC - character to convert
             ;-----------------------------------------
-asctocbm    .(
+D80_asctocbm    .(
             cmp  #33          ; If acc<=32 then acc=space, return
             bcc  blank        ; /
             cmp  #127         ; If acc>=127 then acc=space, return
@@ -306,5 +307,5 @@ done        rts
 ;====================================
 ; Data
 ;====================================
-viewcolge   .byt 0            ; Viewable window for 20 columns - col >= val
-viewcollt   .byt 0            ; Viewable window for 20 columns - col < val
+D80_Viewcolge   .byt 0        ; Viewable window for 20 columns - col >= val
+D80_Viewcollt   .byt 0        ; Viewable window for 20 columns - col < val

@@ -4,9 +4,8 @@
 ;----------------------------------------------------------------------
 ; Requires 8k+ memory
 ; Note the zero page locations used and need
-; to provide a label shadScr8020 that will have room for
+; to provide a label D80_shadScr that will have room for
 ; the shadow screen after it (80x22 bytes).
-; TODO rename shadScr8020
 ;----------------------------------------------------------------------
 ; Copyright (C) 2021-2022 Lawrence Woodman <lwoodman@vlifesystems.com>
 ; Licensed under an MIT licence.  Please see LICENCE.md for details.
@@ -57,32 +56,33 @@ CHDEFROW    = $12             ; 8-bit character defintion row
 
 
             ;--------------------------------
-            ; init8020
+            ; D80_init
             ; Init 80/20 character screen
             ;--------------------------------
-init8020    lda  #00          ; Init cursor to top left of screen
-            sta  crx          ; |
-            sta  cry          ; /
-            sta  inRedraw     ; Set as not in middle of redraw
-            jmp  clrScrShad   ; Clear the shadow screen (RTS)
+D80_init    lda  #00              ; Init cursor to top left of screen
+            sta  D80_Crx          ; |
+            sta  D80_Cry          ; /
+            sta  D80_InRedraw     ; Set as not in middle of redraw
+            jmp  D80_ClrScrShad   ; Clear the shadow screen (RTS)
 
 
             ;------------------------------------------
-            ; scrollup
+            ; D80_scrollup
             ; Scroll the screen up
+            ; NOTE two lines to match D80_Scrollup80
             ;------------------------------------------
-scrollup    .(
-            jsr  scrollupShad
-            lda  mode8020
+D80_scrollup  .(
+            jsr  D80_ScrollupShad
+            lda  D80_Mode
             cmp  #MODE80
             beq  is80
-is20        jmp  scrollup20
-is80        jmp  scrollup80
+is20        jmp  D80_Scrollup20
+is80        jmp  D80_Scrollup80
 .)
 
 
             ;------------------------------------------
-            ; putch
+            ; D80_putch
             ; Print a character to screen at cursor
             ; and move cursor
             ; This will print NL, BS control characters
@@ -90,7 +90,7 @@ is80        jmp  scrollup80
             ;------------------------------------------
             ; ACC - character to print
             ;------------------------------------------
-putch       .(
+D80_putch   .(
             cmp  #NL          ; If newline character
             beq  newline
             cmp  #BS          ; If backspace character
@@ -105,30 +105,30 @@ putch       .(
 
             ; Print the character
             pha
-            lda  crx
+            lda  D80_Crx
             tax
-            lda  cry
+            lda  D80_Cry
             tay
             pla
-            jsr  putchxy
+            jsr  D80_putchxy
 
             ; Move cursor
-            lda  crx
+            lda  D80_Crx
             cmp  #SLSTCOL80
             bne  nextCol
 
             ; Move cursor to next line
 newline     lda  #0
-            sta  crx
-            lda  cry
+            sta  D80_Crx
+            lda  D80_Cry
             cmp  #(SNUMROW-1)
             beq  scroll       ; Scroll up if on last line
-            inc  cry
+            inc  D80_Cry
             bne  done         ; Equivalant to JMP
 
 tab         ; Move to next tab stop (every eighth column)
-            lda  crx
-            cmp  #72          ; If crx>=72, newline
+            lda  D80_Crx
+            cmp  #72          ; If D80_Crx>=72, newline
             bcs  newline      ; /
             and  #7           ; Look at right 3 bits
             eor  #$FF         ; Subtract value from 7
@@ -138,7 +138,7 @@ tab         ; Move to next tab stop (every eighth column)
 spaceLoop   txa
             pha
             lda  #SPACE       ; Print a space
-            jsr  putch        ; /
+            jsr  D80_putch    ; /
             pla
             tax
             dex
@@ -146,32 +146,31 @@ spaceLoop   txa
             beq  done
 
 backspace   ; Move cursor back one character and delete character
-            ldx  crx          ; If at beginning of line
+            ldx  D80_Crx      ; If at beginning of line
             beq  crup         ; /
-            dec  crx
+            dec  D80_Crx
             jmp  blank
-crup        lda  cry          ; If at top left of screen ignore key
+crup        lda  D80_Cry      ; If at top left of screen ignore key
             beq  done         ; /
             lda  #79          ; Move to end of previous line
-            sta  crx
-            dec  cry
+            sta  D80_Crx
+            dec  D80_Cry
 blank       lda  #SPACE       ; Blank out the character
-            ldx  crx          ; |
-            ldy  cry          ; |
-            jsr  putchxy      ; |
+            ldx  D80_Crx      ; |
+            ldy  D80_Cry      ; |
+            jsr  D80_putchxy  ; |
             jmp  done         ; /
 
-scroll      jsr  scrollup
+scroll      jsr  D80_scrollup
             jmp  done
 
-nextCol     inc  crx
+nextCol     inc  D80_Crx
 done        rts
 .)
 
 
-
             ;-----------------------------------------
-            ; putchxy
+            ; D80_putchxy
             ; Print a character to screen at position
             ; specified on either the 80 columns or
             ; 20 column screen
@@ -180,30 +179,30 @@ done        rts
             ;   X - Column on simulated screen
             ;   Y - Row on simulated screen
             ;-----------------------------------------
-putchxy     .(
-            sta tmpAcc
+D80_putchxy .(
+            sta D80_TmpAcc
             txa               ; Push the X,Y parameters to the stack
             pha               ; |
             tya               ; |
             pha               ; /
-            lda  tmpAcc
-            jsr  putchxyShd   ; Store the character to the shadow screen
+            lda  D80_TmpAcc
+            jsr  D80_PutchxyShd   ; Store the character to the shadow screen
             pla
             tay
             pla
             tax
-            lda  mode8020
+            lda  D80_Mode
             cmp  #MODE80
             beq  is80
-is20        lda  tmpAcc
-            jmp  putchxy20         ; Will return from here
-is80        lda  tmpAcc
-            jmp  putchxy80         ; Will return from here
+is20        lda  D80_TmpAcc
+            jmp  D80_Putchxy20     ; Will return from here
+is80        lda  D80_TmpAcc
+            jmp  D80_Putchxy80     ; Will return from here
 .)
 
 
             ;----------------------------------------
-            ; puts
+            ; D80_puts
             ; Print string
             ;----------------------------------------
             ; STRADDR - Location of zero terminated
@@ -211,11 +210,11 @@ is80        lda  tmpAcc
             ;           left at end of string after
             ;           function returns.
             ;----------------------------------------
-puts        .(
+D80_puts    .(
 loop        ldy  #00
             lda  (STRADDR), y
             beq  done
-            jsr  putch
+            jsr  D80_putch
             inc  STRADDR      ; Increment STRADDR
             bne  incDone      ; |
             inc  STRADDR+1    ; /
@@ -226,23 +225,23 @@ done        rts
 
 
             ;----------------------------------------
-            ; getx
+            ; D80_getx
             ; Returns X (column) value of cursor
             ; in ACC
             ;----------------------------------------
-getx        lda  crx
+D80_getx    lda  D80_Crx
             rts
 
 
             ;----------------------------------------
-            ; setxy
+            ; D80_setxy
             ; Set X and Y location of cursor
             ;----------------------------------------
             ; X - Column
             ; Y - Row
             ;----------------------------------------
-setxy       stx  crx
-            sty  cry
+D80_setxy   stx  D80_Crx
+            sty  D80_Cry
             rts
 
 #include "display80.a65"
@@ -254,9 +253,9 @@ setxy       stx  crx
 ;====================================
 ; Data
 ;====================================
-mode8020    .byt MODE20       ; Whether in 80 or 20 colummn mode
-crx         .byt 0            ; Cursor x position on simulated screen
-cry         .byt 0            ; Cursor y position on simulated screen
-inRedraw    .byt 0            ; In middle of redraw operation
-tmpAcc      .byt 0            ; Temporary location to store ACC if stack
+D80_Mode        .byt MODE20   ; Whether in 80 or 20 colummn mode
+D80_Crx         .byt 0        ; Cursor x position on simulated screen
+D80_Cry         .byt 0        ; Cursor y position on simulated screen
+D80_InRedraw    .byt 0        ; In middle of redraw operation
+D80_TmpAcc      .byt 0        ; Temporary location to store ACC if stack
                               ; not convenient

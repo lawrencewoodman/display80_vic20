@@ -31,8 +31,8 @@ start       jmp  main
 #include "display.a65"
 
 main        .(
-            jsr  init8020
-            jsr  start80
+            jsr  D80_init
+            jsr  D80_start80
             lda  #00
             sta  pause
 
@@ -65,28 +65,28 @@ getKey      lda  FDX
             beq  keyP
             bne  wait
 
-cols20_q1   jsr  start20
+cols20_q1   jsr  D80_start20
             lda  #1
-            jsr  setView20
-            jsr  redraw
+            jsr  D80_setView20
+            jsr  D80_redraw
             jmp  wait
-cols20_q2   jsr  start20
+cols20_q2   jsr  D80_start20
             lda  #2
-            jsr  setView20
-            jsr  redraw
+            jsr  D80_setView20
+            jsr  D80_redraw
             jmp  wait
-cols20_q3   jsr  start20
+cols20_q3   jsr  D80_start20
             lda  #3
-            jsr  setView20
-            jsr  redraw
+            jsr  D80_setView20
+            jsr  D80_redraw
             jmp  wait
-cols20_q4   jsr  start20
+cols20_q4   jsr  D80_start20
             lda  #4
-            jsr  setView20
-            jsr  redraw
+            jsr  D80_setView20
+            jsr  D80_redraw
             jmp  wait
-cols80      jsr  start80
-            jsr  redraw
+cols80      jsr  D80_start80
+            jsr  D80_redraw
             jmp  wait
 
 keyP        lda  pause
@@ -112,8 +112,8 @@ scrollText  .(
 loop        ldy  #00
             lda  (STRADDR), y
             beq  done
-            jsr  putch
-            jsr  getx
+            jsr  D80_putch
+            jsr  D80_getx
             bne  notFirstCol  ; If in first column
 pauseLoop   jsr  delay
             lda  pause
@@ -157,4 +157,4 @@ msg         .aasc "80 columns on the Commodore VIC-20!",NL
             .aasc "Where there's a will there's a way!",NL
             .aasc  NL,0
 
-shadScr8020 ; The shadow screen with room for 80x22 bytes
+D80_shadScr ; The shadow screen with room for 80x22 bytes

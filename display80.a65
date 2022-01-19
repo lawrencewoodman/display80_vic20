@@ -15,23 +15,24 @@ SLSTCOL80   = SNUMCOL-1       ; Last simulated column
 
 
             ;--------------------------------
-            ; start80
+            ; D80_start80
             ; Start 80 character screen
             ;--------------------------------
-start80     lda  #MODE80      ; Set which mode we are in
-            sta  mode8020     ; /
-            jsr  cfgScr80     ; Configure screen
-            jsr  initClr80    ; Init the colour map
-            jsr  initScr80    ; Init the screen
-            jmp  clrScr80     ; Clear the screen by clearing character map
+D80_start80 lda  #MODE80          ; Set which mode we are in
+            sta  D80_Mode         ; /
+            jsr  D80_CfgScr80     ; Configure screen
+            jsr  D80_InitClr80    ; Init the colour map
+            jsr  D80_InitScr80    ; Init the screen
+            jmp  D80_ClrScr80     ; Clear the screen by clearing character map
 
 
             ;-----------------------------------------------
-            ; cfgScr80
+            ; D80_CfgScr80
             ; Configure screen dimensions, position and
             ; memory locations
             ;-----------------------------------------------
-cfgScr80    lda  #RVTVORIGIN
+D80_CfgScr80
+            lda  #RVTVORIGIN
             sta  VICCR1       ; Set vertical TV origin
             lda  #(128|RNUMCOL80)
             sta  VICCR2       ; Set number of columns displayed
@@ -46,11 +47,11 @@ cfgScr80    lda  #RVTVORIGIN
 
 
             ;-----------------------------------------------
-            ; initClr80
+            ; D80_InitClr80
             ; Init the colour map to alternate black/blue
             ; colours to help make characters more distinct
             ;-----------------------------------------------
-initClr80   .(
+D80_InitClr80   .(
             ldy  #00
             lda  #CLBLACK
 loop        sta  COLMAPBASE, y
@@ -66,10 +67,10 @@ next        iny
 
 
             ;-----------------------------------------------
-            ; initScr80
+            ; D80_InitScr80
             ; Fill screen map with characters needed
             ;-----------------------------------------------
-initScr80   .(
+D80_InitScr80   .(
             ldy  #(RNUMCOL80*RNUMROW80)
 loop        tya
             sta  SCRBASE, y     ; Store character in screen map
@@ -81,10 +82,10 @@ loop        tya
 
 
             ;-----------------------------------------------
-            ; clrScr80
+            ; D80_ClrScr80
             ; Clear the screen by zeroing the character map
             ;-----------------------------------------------
-clrScr80    .(
+D80_ClrScr80    .(
             lda  #$00
             sta  CHRADDR
             lda  #>CHRMAPBASE
@@ -103,10 +104,10 @@ doneInc     lda  CHRADDR+1
 
 
             ;------------------------------------------
-            ; scrollup80
-            ; Scroll 80 column screen up up two lines
+            ; D80_Scrollup80
+            ; Scroll 80 column screen up two lines
             ;------------------------------------------
-scrollup80  .(
+D80_Scrollup80  .(
             lda  #<(CHRMAPBASE+16*RNUMCOL80)  ; Set copy start locations
             sta  SFROM                        ; |
             lda  #>(CHRMAPBASE+16*RNUMCOL80)  ; |
@@ -155,14 +156,14 @@ wipeLoop    sta  (STO),y
             bne  wipeLoop
 
             lda  #(SNUMROW-2)      ; Set the cursor to one line up from bottom
-            sta  cry
+            sta  D80_Cry
 
             rts
 .)
 
 
             ;-----------------------------------------
-            ; putchxy80
+            ; D80_Putchxy80
             ; Print a character to screen at position
             ; specified on 80 column screen
             ; This will print ASCII 32-126
@@ -171,7 +172,7 @@ wipeLoop    sta  (STO),y
             ;   X - Column on simulated screen
             ;   Y - Row on simulated screen
             ;-----------------------------------------
-putchxy80   .(
+D80_Putchxy80   .(
             cmp  #97
             bcc  storeCh      ; If <= 96
             cmp  #127
@@ -185,7 +186,7 @@ ge123lt127  sec
             sbc  #26
             jmp  storeCh
 ge127       lda  #32          ; Space
-storeCh     sta  D80_ch       ; Store the character
+storeCh     sta  D80_Ch       ; Store the character
             lda  #$00         ; Zero CHRADDR
             sta  CHRADDR      ; |
             lda  #$00         ; |
@@ -194,7 +195,7 @@ storeCh     sta  D80_ch       ; Store the character
             ; Find which quarter of a character definition
             txa
             and  #3           ; Look at right 2 bits
-            sta  chquarter
+            sta  D80_Chquarter
 
 
             ; Find which vertical half of a character definition
@@ -205,7 +206,7 @@ storeCh     sta  D80_ch       ; Store the character
             lda  #00
             beq  storeOff
 vhalf2      lda  #08
-storeOff    sta  chhalfoff
+storeOff    sta  D80_Chhalfoff
 
             ; TODO Put this where zero CHRADDR is above
             ; Find location of simulated column pair
@@ -251,13 +252,13 @@ mul16       ; Multiply by 16 to find location of character
             ; definition
             clc
             lda  CHRADDR
-            adc  chhalfoff
+            adc  D80_Chhalfoff
             sta  CHRADDR
 
             ; Copy the character to the screen
             lda  #00
             sta  CHDEFADDR+1
-            lda  D80_ch       ; Load the character
+            lda  D80_Ch       ; Load the character
             sec
             sbc  #SPACE       ; Font definitions are from space onwards
             lsr               ; Divide by 4
@@ -272,20 +273,20 @@ mul16       ; Multiply by 16 to find location of character
 
             clc
             lda  CHDEFADDR
-            adc  #<fontDef     ; lsb
+            adc  #<D80_fontDef    ; lsb
             sta  CHDEFADDR
             lda  CHDEFADDR+1
-            adc  #>fontDef     ; msb
+            adc  #>D80_fontDef    ; msb
             sta  CHDEFADDR+1
 
             ; Find character def quarter
-            lda  D80_ch
+            lda  D80_Ch
             and  #3
-            sta  D80_chdefq   ; Save quarter for character def
+            sta  D80_Chdefq   ; Save quarter for character def
 
             ; Calculate char definition mask to extract char def
             ldy  #7
-            lda  D80_chdefq
+            lda  D80_Chdefq
             beq  qd0
             cmp  #01
             beq  qd1
@@ -293,19 +294,19 @@ mul16       ; Multiply by 16 to find location of character
             beq  qd2
 
 qd3         lda  #$3
-            sta  D80_chdefmask
+            sta  D80_Chdefmask
             bne  setchMask
 qd2         lda  #$C
-            sta  D80_chdefmask
+            sta  D80_Chdefmask
             bne  setchMask
 qd1         lda  #$30
-            sta  D80_chdefmask
+            sta  D80_Chdefmask
             bne  setchMask
 qd0         lda  #$C0
-            sta  D80_chdefmask
+            sta  D80_Chdefmask
 
             ; Calculate char mask to wipe before new char copied
-setchMask   lda  chquarter
+setchMask   lda  D80_Chquarter
             beq  q0
             cmp  #01
             beq  q1
@@ -313,24 +314,24 @@ setchMask   lda  chquarter
             beq  q2
 
 q3          lda  #$FC
-            sta  D80_chmask
+            sta  D80_Chmask
             bne  calcQDiff
 q2          lda  #$F3
-            sta  D80_chmask
+            sta  D80_Chmask
             bne  calcQDiff
 q1          lda  #$CF
-            sta  D80_chmask
+            sta  D80_Chmask
             bne  calcQDiff
 q0          lda  #$3F
-            sta  D80_chmask
+            sta  D80_Chmask
 
 
             ; Calculate the difference between the quarter of the char
             ; definition and where it is needed
 calcQDiff   sec
-            lda  chquarter
-            sbc  D80_chdefq
-            sta  D80_chqdiff
+            lda  D80_Chquarter
+            sbc  D80_Chdefq
+            sta  D80_Chqdiff
             beq  copyCh       ; No shifting needed so just copy the character
             bpl  shiftRight
 
@@ -339,16 +340,16 @@ calcQDiff   sec
             ; left to line up with where it is needed and then copy it to
             ; redefine the character on the screen
 shiftLeft   ldy  #7               ; Number of rows of char definition less one
-slLoopA     ldx  D80_chqdiff
+slLoopA     ldx  D80_Chqdiff
             lda  (CHDEFADDR),y    ; Extract character definition
-            and  D80_chdefmask    ; /
+            and  D80_Chdefmask    ; /
 slLoopB     asl                   ; Shift definition to align with where
             asl                   ; /  needed
             inx                   ; Difference is negative so increment
             bne  slLoopB          ; /  until 0
             sta  CHDEFROW
             lda  (CHRADDR),y
-            and  D80_chmask       ; Wipe bits where new character is to go
+            and  D80_Chmask       ; Wipe bits where new character is to go
             ora  CHDEFROW
             sta  (CHRADDR),y
             dey
@@ -359,16 +360,16 @@ slLoopB     asl                   ; Shift definition to align with where
             ; right to line up with where it is needed and then copy it to
             ; redefine the character on the screen
 shiftRight  ldy  #7               ; Number of rows of char definition less one
-srLoopA     ldx  D80_chqdiff
+srLoopA     ldx  D80_Chqdiff
             lda  (CHDEFADDR),y    ; Extract character definition
-            and  D80_chdefmask    ; /
+            and  D80_Chdefmask    ; /
 srLoopB     lsr                   ; Shift definition to align with where
             lsr                   ; /  needed
             dex
             bne  srLoopB
             sta  CHDEFROW
             lda  (CHRADDR),y
-            and  D80_chmask       ; Wipe bits where new character is to go
+            and  D80_Chmask       ; Wipe bits where new character is to go
             ora  CHDEFROW
             sta  (CHRADDR),y
             dey
@@ -379,10 +380,10 @@ srLoopB     lsr                   ; Shift definition to align with where
             ; shifting to redefine the character on the screen
 copyCh      ldy  #7
 copyChLoop  lda  (CHDEFADDR),y    ; Extract character definition
-            and  D80_chdefmask    ; /
+            and  D80_Chdefmask    ; /
             sta  CHDEFROW
             lda  (CHRADDR),y
-            and  D80_chmask       ; Wipe bits where new character is to go
+            and  D80_Chmask       ; Wipe bits where new character is to go
             ora  CHDEFROW
             sta  (CHRADDR),y
             dey
@@ -394,12 +395,12 @@ done        rts
 ;====================================
 ; Data
 ;====================================
-chquarter   .byt 0            ; Quarter of character definition
-chhalfoff   .byt 0            ; Half of character definition offset (half*8)
-D80_ch      .byt 0            ; A character
-D80_chdefq  .byt 0            ; The quarter that the char definition is in
-D80_chqdiff .byt 0            ; The difference between the quarter of the char
+D80_Chquarter .byt 0          ; Quarter of character definition
+D80_Chhalfoff .byt 0          ; Half of character definition offset (half*8)
+D80_Ch        .byt 0          ; A character
+D80_Chdefq    .byt 0          ; The quarter that the char definition is in
+D80_Chqdiff   .byt 0          ; The difference between the quarter of the char
                               ; definition and where it is needed
-D80_chmask  .byt 0            ; Bitmask used to wipe bits before copy char
+D80_Chmask    .byt 0          ; Bitmask used to wipe bits before copy char
                               ; to screen/character map
-D80_chdefmask  .byt 0         ; Bitmask used to extract character definition
+D80_Chdefmask .byt 0          ; Bitmask used to extract character definition
