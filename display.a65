@@ -52,7 +52,7 @@ SHADADDR    = $07             ; 16-bit shadow screen address (calculations)
 STRADDR     = $0B             ; 16-bit address of a string to print
 SFROM       = $0D             ; 16-bit scroll from address
 STO         = $0F             ; 16-bit scroll to address
-CHDEF       = $14             ; 8 bytes defining a character
+CHDEFROW    = $12             ; 8-bit character defintion row
 
 
 
