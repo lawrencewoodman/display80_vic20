@@ -1,7 +1,7 @@
 display80_vic20
-================
+===============
 
-Demonstration of an 80 column text mode for the Commodore VIC-20 using a 2x8 font.
+Demonstration of an 80 column text mode for the Commodore VIC-20 using a 2x8 font.  Please see the article [80 Columns in Software on the Commodore VIC-20](https://techtinkering.com/articles/80-columns-in-software-on-the-commodore-vic-20/).
 
 
 ## The Files
